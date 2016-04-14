@@ -1,0 +1,287 @@
+#if !defined(SQLFuncPublic_H_ZZG)
+#define SQLFuncPublic_H_ZZG
+
+//#define _WIN32_WINNT 0x0501
+
+#ifndef WINVER
+#define WINVER 0x0501
+#endif
+
+#include<windows.h>
+#include<sql.h>
+#include<sqlext.h>
+#include<stdio.h>
+#include<iostream>
+#include<time.h>
+
+using namespace std;
+
+#define num1    10
+#define num2    3
+//#define SQLLEN  long
+
+extern SQLWCHAR message[SQL_MAX_MESSAGE_LENGTH];
+
+SQLWCHAR *diagnostic(short type, SQLHANDLE handle) ;
+
+void CleanDBConnect(SQLHSTMT & hstmt_dre,SQLHDBC & hdbc_dre,SQLHENV & henv);
+
+typedef struct {
+	SQLDOUBLE vol_cur_id;
+	SQLDOUBLE meter_id;
+    SQLCHAR phase[1 + 1];
+    SQL_TIMESTAMP_STRUCT data_date;
+	SQL_TIMESTAMP_STRUCT metering_time;
+    SQLDOUBLE V1;
+	SQLDOUBLE V2;
+	SQLDOUBLE V3;
+	SQLDOUBLE V4;
+	SQLDOUBLE V5;
+	SQLDOUBLE V6;
+	SQLDOUBLE V7;
+	SQLDOUBLE V8;
+	SQLDOUBLE V9;
+	SQLDOUBLE V10;
+	SQLDOUBLE V11;
+	SQLDOUBLE V12;
+	SQLDOUBLE V13;
+	SQLDOUBLE V14;
+	SQLDOUBLE V15;
+	SQLDOUBLE V16;
+	SQLDOUBLE V17;
+	SQLDOUBLE V18;
+	SQLDOUBLE V19;
+	SQLDOUBLE V20;
+	SQLDOUBLE V21;
+	SQLDOUBLE V22;
+	SQLDOUBLE V23;
+	SQLDOUBLE V24;
+	SQLDOUBLE V25;
+	SQLDOUBLE V26;
+	SQLDOUBLE V27;
+	SQLDOUBLE V28;
+	SQLDOUBLE V29;
+	SQLDOUBLE V30;
+	SQLDOUBLE V31;
+	SQLDOUBLE V32;
+	SQLDOUBLE V33;
+	SQLDOUBLE V34;
+	SQLDOUBLE V35;
+	SQLDOUBLE V36;
+	SQLDOUBLE V37;
+	SQLDOUBLE V38;
+	SQLDOUBLE V39;
+	SQLDOUBLE V40;
+	SQLDOUBLE V41;
+	SQLDOUBLE V42;
+	SQLDOUBLE V43;
+	SQLDOUBLE V44;
+	SQLDOUBLE V45;
+	SQLDOUBLE V46;
+	SQLDOUBLE V47;
+	SQLDOUBLE V48;
+	SQLDOUBLE V49;
+	SQLDOUBLE V50;
+	SQLDOUBLE V51;
+	SQLDOUBLE V52;
+	SQLDOUBLE V53;
+	SQLDOUBLE V54;
+	SQLDOUBLE V55;
+	SQLDOUBLE V56;
+	SQLDOUBLE V57;
+	SQLDOUBLE V58;
+	SQLDOUBLE V59;
+	SQLDOUBLE V60;
+	SQLDOUBLE V61;
+	SQLDOUBLE V62;
+	SQLDOUBLE V63;
+	SQLDOUBLE V64;
+	SQLDOUBLE V65;
+	SQLDOUBLE V66;
+	SQLDOUBLE V67;
+	SQLDOUBLE V68;
+	SQLDOUBLE V69;
+	SQLDOUBLE V70;
+	SQLDOUBLE V71;
+	SQLDOUBLE V72;
+	SQLDOUBLE V73;
+	SQLDOUBLE V74;
+	SQLDOUBLE V75;
+	SQLDOUBLE V76;
+	SQLDOUBLE V77;
+	SQLDOUBLE V78;
+	SQLDOUBLE V79;
+	SQLDOUBLE V80;
+	SQLDOUBLE V81;
+	SQLDOUBLE V82;
+	SQLDOUBLE V83;
+	SQLDOUBLE V84;
+	SQLDOUBLE V85;
+	SQLDOUBLE V86;
+	SQLDOUBLE V87;
+	SQLDOUBLE V88;
+	SQLDOUBLE V89;
+	SQLDOUBLE V90;
+	SQLDOUBLE V91;
+	SQLDOUBLE V92;
+	SQLDOUBLE V93;
+	SQLDOUBLE V94;
+	SQLDOUBLE V95;
+	SQLDOUBLE V96;
+
+	SQLLEN len_vol_cur_id, len_meter_id, len_phase, len_data_date, len_metering_time, len_V1, 
+		len_V2, len_V3, len_V4, len_V5, len_V6, len_V7, len_V8, len_V9, len_V10, len_V11, 
+		len_V12, len_V13, len_V14, len_V15, len_V16, len_V17, len_V18, len_V19, len_V20, len_V21, 
+		len_V22, len_V23, len_V24, len_V25, len_V26, len_V27, len_V28, len_V29, len_V30, len_V31, 
+		len_V32, len_V33, len_V34, len_V35, len_V36, len_V37, len_V38, len_V39, len_V40, len_V41, 
+		len_V42, len_V43, len_V44, len_V45, len_V46, len_V47, len_V48, len_V49, len_V50, len_V51, 
+		len_V52, len_V53, len_V54, len_V55, len_V56, len_V57, len_V58, len_V59, len_V60, len_V61, 
+		len_V62, len_V63, len_V64, len_V65, len_V66, len_V67, len_V68, len_V69, len_V70, len_V71, 
+		len_V72, len_V73, len_V74, len_V75, len_V76, len_V77, len_V78, len_V79, len_V80, len_V81, 
+		len_V82, len_V83, len_V84, len_V85, len_V86, len_V87, len_V88, len_V89, len_V90, len_V91, len_V92, len_V93, len_V94, len_V95, len_V96;
+} crm_mnp_npdb_esvf;
+
+typedef struct {
+	SQLDOUBLE vol_cur_id;
+	SQLDOUBLE meter_id;
+   SQL_TIMESTAMP_STRUCT data_date;
+	SQL_TIMESTAMP_STRUCT metering_time;
+	SQLDOUBLE V96;
+	SQLDOUBLE V1;
+	SQLDOUBLE V2;
+	SQLDOUBLE V3;
+	SQLDOUBLE V4;
+	SQLDOUBLE V5;
+	SQLDOUBLE V6;
+	SQLDOUBLE V7;
+	SQLDOUBLE V8;
+	SQLDOUBLE V9;
+	SQLDOUBLE V10;
+	SQLDOUBLE V11;
+	SQLDOUBLE V12;
+	SQLDOUBLE V13;
+	SQLDOUBLE V14;
+	SQLDOUBLE V15;
+	SQLDOUBLE V16;
+	SQLDOUBLE V17;
+	SQLDOUBLE V18;
+	SQLDOUBLE V19;
+	SQLDOUBLE V20;
+	SQLDOUBLE V21;
+	SQLDOUBLE V22;
+	SQLDOUBLE V23;
+	SQLDOUBLE V24;
+	SQLDOUBLE V25;
+	SQLDOUBLE V26;
+	SQLDOUBLE V27;
+	SQLDOUBLE V28;
+	SQLDOUBLE V29;
+	SQLDOUBLE V30;
+	SQLDOUBLE V31;
+	SQLDOUBLE V32;
+	SQLDOUBLE V33;
+	SQLDOUBLE V34;
+	SQLDOUBLE V35;
+	SQLDOUBLE V36;
+	SQLDOUBLE V37;
+	SQLDOUBLE V38;
+	SQLDOUBLE V39;
+	SQLDOUBLE V40;
+	SQLDOUBLE V41;
+	SQLDOUBLE V42;
+	SQLDOUBLE V43;
+	SQLDOUBLE V44;
+	SQLDOUBLE V45;
+	SQLDOUBLE V46;
+	SQLDOUBLE V47;
+	SQLDOUBLE V48;
+	SQLDOUBLE V49;
+	SQLDOUBLE V50;
+	SQLDOUBLE V51;
+	SQLDOUBLE V52;
+	SQLDOUBLE V53;
+	SQLDOUBLE V54;
+	SQLDOUBLE V55;
+	SQLDOUBLE V56;
+	SQLDOUBLE V57;
+	SQLDOUBLE V58;
+	SQLDOUBLE V59;
+	SQLDOUBLE V60;
+	SQLDOUBLE V61;
+	SQLDOUBLE V62;
+	SQLDOUBLE V63;
+	SQLDOUBLE V64;
+	SQLDOUBLE V65;
+	SQLDOUBLE V66;
+	SQLDOUBLE V67;
+	SQLDOUBLE V68;
+	SQLDOUBLE V69;
+	SQLDOUBLE V70;
+	SQLDOUBLE V71;
+	SQLDOUBLE V72;
+	SQLDOUBLE V73;
+	SQLDOUBLE V74;
+	SQLDOUBLE V75;
+	SQLDOUBLE V76;
+	SQLDOUBLE V77;
+	SQLDOUBLE V78;
+	SQLDOUBLE V79;
+	SQLDOUBLE V80;
+	SQLDOUBLE V81;
+	SQLDOUBLE V82;
+	SQLDOUBLE V83;
+	SQLDOUBLE V84;
+	SQLDOUBLE V85;
+	SQLDOUBLE V86;
+	SQLDOUBLE V87;
+	SQLDOUBLE V88;
+	SQLDOUBLE V89;
+	SQLDOUBLE V90;
+	SQLDOUBLE V91;
+	SQLDOUBLE V92;
+	SQLDOUBLE V93;
+	SQLDOUBLE V94;
+	SQLDOUBLE V95;
+	SQLLEN len_vol_cur_id, len_meter_id, len_data_date, len_metering_time, len_V96, len_V1, 
+		len_V2, len_V3, len_V4, len_V5, len_V6, len_V7, len_V8, len_V9, len_V10, len_V11, 
+		len_V12, len_V13, len_V14, len_V15, len_V16, len_V17, len_V18, len_V19, len_V20, len_V21, 
+		len_V22, len_V23, len_V24, len_V25, len_V26, len_V27, len_V28, len_V29, len_V30, len_V31, 
+		len_V32, len_V33, len_V34, len_V35, len_V36, len_V37, len_V38, len_V39, len_V40, len_V41, 
+		len_V42, len_V43, len_V44, len_V45, len_V46, len_V47, len_V48, len_V49, len_V50, len_V51, 
+		len_V52, len_V53, len_V54, len_V55, len_V56, len_V57, len_V58, len_V59, len_V60, len_V61, 
+		len_V62, len_V63, len_V64, len_V65, len_V66, len_V67, len_V68, len_V69, len_V70, len_V71, 
+		len_V72, len_V73, len_V74, len_V75, len_V76, len_V77, len_V78, len_V79, len_V80, len_V81, 
+		len_V82, len_V83, len_V84, len_V85, len_V86, len_V87, len_V88, len_V89, len_V90, len_V91, len_V92, len_V93, len_V94, len_V95;
+} crm_mnp_npdb_energy;
+
+typedef struct {
+	SQLDOUBLE vol_cur_id;
+	SQLDOUBLE meter_id;
+	SQL_TIMESTAMP_STRUCT data_date;
+	SQL_TIMESTAMP_STRUCT metering_time;
+	SQLDOUBLE V1;
+	SQLDOUBLE V2;
+	SQLDOUBLE V3;
+	SQLDOUBLE V4;
+	SQLDOUBLE V5;
+	SQLLEN len_vol_cur_id;
+	SQLLEN len_meter_id;
+	SQLLEN len_data_date;
+	SQLLEN len_metering_time;
+	SQLLEN len_V1;
+	SQLLEN len_V2;
+	SQLLEN len_V3;
+	SQLLEN len_V4;
+	SQLLEN len_V5;
+} crm_mnp_npdb_day_energy;
+
+typedef struct {
+	SQLDOUBLE vol_cur_id;
+	SQLDOUBLE meter_id;
+	SQL_TIMESTAMP_STRUCT data_date;
+	SQL_TIMESTAMP_STRUCT metering_time;
+	SQLDOUBLE V1;
+	SQLLEN len_vol_cur_id, len_meter_id, len_data_date, len_metering_time, len_V1;
+} crm_mnp_npdb_min;
+
+#endif //SQLFuncPublic_H_ZZG
