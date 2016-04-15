@@ -323,6 +323,7 @@ public:
 
         retryCount = new QSpinBox(mainform);
         retryCount->setObjectName(QStringLiteral("retryCount"));
+        retryCount->setMaximum(1000);
         retryCount->setValue(5);
 
         hboxLayout4->addWidget(retryCount);
