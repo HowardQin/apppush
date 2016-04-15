@@ -1,5 +1,8 @@
 #include "dealMainServiceThread.h"
 
+
+QMutex DealMainServiceThread::m_mutex;
+
 DealMainServiceThread::DealMainServiceThread()
 {
 	m_bPause = false;
@@ -31,7 +34,7 @@ void DealMainServiceThread::mySQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGE
 		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程 SQLSetStmtAttr 出错，错误码[%2][%3]，进程将退出")
 			.arg(m_iProcessID)
 			.arg(rc)
-			.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));;
+			.arg(QString::fromWCharArray(sErrorMsg));
 		throw m_sMsg;
 	}
 }
@@ -45,7 +48,7 @@ void DealMainServiceThread::mySQLAllocHandle(SQLSMALLINT HandleType, SQLHANDLE I
 		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLAllocHandle出错，错误码[%2][%3]，进程将退出")
 			.arg(m_iProcessID)
 			.arg(rc)
-			.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));;
+			.arg(QString::fromWCharArray(sErrorMsg));
 		throw m_sMsg;
 	}
 }
@@ -58,7 +61,8 @@ void DealMainServiceThread::mySQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINT
 		SQLWCHAR * sErrorMsg = diagnostic(SQL_HANDLE_DBC, ConnectionHandle);
 		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLSetConnectAttr出错，错误码[%2][%3]，进程将退出")
 			.arg(m_iProcessID)
-			.arg(rc).arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));;
+			.arg(rc)
+			.arg(QString::fromWCharArray(sErrorMsg));
 		throw m_sMsg;
 	}
 }
@@ -80,21 +84,35 @@ void DealMainServiceThread::mySQLConnect(SQLHDBC ConnectionHandle,
 		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程建立数据库连接出错，错误码[%2][%3]，进程将退出")
 			.arg(m_iProcessID)
 			.arg(rc)
-			.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
+			.arg(QString::fromWCharArray(sErrorMsg));
 		throw m_sMsg;
 	}
 }
 
 void DealMainServiceThread::mySQLPrepare(SQLHSTMT StatementHandle,	SQLWCHAR * StatementText, SQLINTEGER TextLength)
 {
-	SQLRETURN rc = SQLPrepare(StatementHandle, (SQLWCHAR*)StatementText, TextLength);
+	SQLRETURN rc = SQLPrepare(StatementHandle, StatementText, TextLength);
 	if (!SQL_SUCCEEDED(rc))
 	{
 		SQLWCHAR * sErrorMsg = diagnostic(SQL_HANDLE_STMT, StatementHandle);
 		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程 SQLPrepare 出错，错误码[%2][%3]，进程将退出")
 			.arg(m_iProcessID)
 			.arg(rc)
-			.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
+			.arg(QString::fromWCharArray(sErrorMsg));
+		throw m_sMsg;
+	}
+}
+
+void DealMainServiceThread::mySQLExecDirect(SQLHSTMT StatementHandle, SQLWCHAR * StatementText,	SQLINTEGER TextLength)
+{
+	SQLRETURN rc = SQLExecDirect(StatementHandle, StatementText, TextLength);
+	if (rc != SQL_SUCCESS)
+	{
+		SQLWCHAR *  sErrorMsg = diagnostic(SQL_HANDLE_STMT, StatementHandle);
+		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程 SQLExecDirect 出错，错误码[%2][%3]，进程将退出")
+			.arg(m_iProcessID)
+			.arg(rc)
+			.arg(QString::fromWCharArray(sErrorMsg));
 		throw m_sMsg;
 	}
 }
@@ -109,7 +127,7 @@ void DealMainServiceThread::mySQLExecute(SQLHSTMT StatementHandle)
 			.arg(m_iProcessID)
 			.arg(m_iCurrlLine)
 			.arg(m_iIDEnd - m_iIDStart - m_iCurrlLine + 1)
-			.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
+			.arg(QString::fromWCharArray(sErrorMsg));
 		throw m_sMsg;
 	}
 }
@@ -119,12 +137,12 @@ void DealMainServiceThread::mySQLEndTran(SQLSMALLINT HandleType, SQLHANDLE Handl
 	SQLRETURN rc = SQLEndTran(HandleType, Handle, CompletionType);
 	if (!SQL_SUCCEEDED(rc))
 	{
-		SQLWCHAR * sErrorMsg = diagnostic(SQL_HANDLE_DBC, Handle);
+		SQLWCHAR * sErrorMsg = diagnostic(HandleType, Handle);
 		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLEndTran异常退出！已经写入[%2]行数据，剩余[%3]待写入[%4]")
 			.arg(m_iProcessID)
 			.arg(m_iCurrlLine)
 			.arg(m_iIDEnd - m_iIDStart - m_iCurrlLine + 1)
-			.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
+			.arg(QString::fromWCharArray(sErrorMsg));
 		throw m_sMsg;
 	}
 }
@@ -134,9 +152,11 @@ void DealMainServiceThread::mySQLSetEnvAttr(SQLHENV EnvironmentHandle,SQLINTEGER
 	SQLRETURN rc = SQLSetEnvAttr(EnvironmentHandle, Attribute, ValuePtr, StringLength);
 	if (!SQL_SUCCEEDED(rc))
 	{
-		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLSetEnvAttr出错，错误码[%2]，进程将退出")
+		SQLWCHAR * sErrorMsg = diagnostic(SQL_HANDLE_ENV, EnvironmentHandle);
+		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLSetEnvAttr出错，错误码[%2] %3，进程将退出")
 			.arg(m_iProcessID)
-			.arg(rc);
+			.arg(rc)
+		    .arg(QString::fromWCharArray(sErrorMsg));
 		throw m_sMsg;
 	}
 }
@@ -152,4 +172,13 @@ void DealMainServiceThread::mySQLBindParameter(	SQLHSTMT StatementHandle, SQLUSM
 		                                                      ParameterType, ColumnSize, 
 															  DecimalDigits, ParameterValuePtr,
 															  BufferLength, StrLen_or_IndPtr);
+	if (!SQL_SUCCEEDED(rc))
+	{
+		SQLWCHAR * sErrorMsg = diagnostic(SQL_HANDLE_STMT, StatementHandle);
+		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLBindParameter出错，错误码[%2] %3，进程将退出")
+			.arg(m_iProcessID)
+			.arg(rc)
+			.arg(QString::fromWCharArray(sErrorMsg));
+		throw m_sMsg;
+	}
 }

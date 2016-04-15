@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Qt5.5-基于ODBC接口的数据库测试工具 from 研发中心</string>
+   <string>ODBC接口的数据库测试工具</string>
   </property>
   <layout class="QVBoxLayout">
    <item>
@@ -124,6 +124,20 @@
          <string>190000000000000</string>
         </property>
        </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="usingInputId">
+       <property name="text">
+        <string>使用输入</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="idBaseInput">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -417,9 +431,40 @@
               </widget>
              </item>
              <item>
-              <widget class="QCheckBox" name="logOff">
+              <widget class="QCheckBox" name="allLogOff">
                <property name="text">
-                <string>关闭日志</string>
+                <string>关闭所有日志</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="detailLogOff">
+               <property name="text">
+                <string>关闭详细日志</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="emptyTable">
+               <property name="text">
+                <string>清空表</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_5">
+               <property name="text">
+                <string>重试次数</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="retryCount">
+               <property name="value">
+                <number>5</number>
                </property>
               </widget>
              </item>
@@ -633,22 +678,22 @@
                </property>
                <item>
                 <property name="text">
-                 <string>日测量点电压曲线（E_MP_VOL_CURVE_P）</string>
+                 <string extracomment="日测量点电压曲线">E_MP_VOL_CURVE_P</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>日测量点总电能量曲线（E_MP_ENERGY_CURVE_P）</string>
+                 <string extracomment="日测量点总电能量曲线">E_MP_ENERGY_CURVE_P</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>测量点日冻结电能量（E_MP_DAY_ENERGY_P）</string>
+                 <string extracomment="测量点日冻结电能量">E_MP_DAY_ENERGY_P</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>测试用最小化表（E_MIN_TABLE_P）</string>
+                 <string extracomment="测试用最小化表">E_MIN_TABLE_P</string>
                 </property>
                </item>
               </widget>
@@ -838,7 +883,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>条，</string>
+        <string>条</string>
        </property>
       </widget>
      </item>
@@ -1006,7 +1051,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>条／s，</string>
+        <string>条/s，</string>
        </property>
        <property name="wordWrap">
         <bool>false</bool>
@@ -1038,7 +1083,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>M／s</string>
+        <string>M/s</string>
        </property>
        <property name="wordWrap">
         <bool>false</bool>
@@ -1158,7 +1203,7 @@
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>条／s，</string>
+        <string>条/s</string>
        </property>
       </widget>
      </item>
@@ -1216,7 +1261,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>条／s</string>
+        <string>条/s</string>
        </property>
        <property name="wordWrap">
         <bool>false</bool>
@@ -1252,6 +1297,12 @@
      </property>
      <item>
       <widget class="QTableWidget" name="lblFileList">
+       <property name="sizeAdjustPolicy">
+        <enum>QAbstractScrollArea::AdjustIgnored</enum>
+       </property>
+       <property name="editTriggers">
+        <set>QAbstractItemView::NoEditTriggers</set>
+       </property>
        <column>
         <property name="text">
          <string>ID起始值</string>
@@ -1278,7 +1329,7 @@
        </column>
        <column>
         <property name="text">
-         <string>已产生字节数（M）</string>
+         <string>已产生字节(M)</string>
         </property>
         <property name="textAlignment">
          <set>AlignCenter</set>
@@ -1293,9 +1344,6 @@
         </property>
        </column>
       </widget>
-     </item>
-     <item>
-      <widget class="QTextEdit" name="txtMsg"/>
      </item>
     </layout>
    </item>

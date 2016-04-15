@@ -69,9 +69,9 @@ const char* CGlobalDataSaver::GetInsertString()
 
 void CGlobalDataSaver::PrintMsg(const QString & sMsg)
 {
-	if (m_bLogOff)
+	if (m_bAllLogOff)
 		return;
-	QMutexLocker locker(&m_mutexPrintMsg);
+	QMutexLocker locker(&m_mutexWriteRunLog);
 	QString sBuf;
 	char FileName[255];
 	QDateTime time = QDateTime::currentDateTime();

@@ -23,6 +23,8 @@ void DealENERGYDataThread::stop()
 
 void DealENERGYDataThread::run()
 { 
+	if (reTryCount > 0)//sleep 1 sec, if failed and restarted
+		sleep(reTryCount);
 	//任务开始
 	m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程已启动，准备连接数据库[%2]")
 		.arg(m_iProcessID)
@@ -47,9 +49,26 @@ void DealENERGYDataThread::run()
 			(SQLWCHAR*)CGlobalDataSaver::GetInstance()->m_sDbUserName.unicode(), SQL_NTS,
 			(SQLWCHAR*)CGlobalDataSaver::GetInstance()->m_sDbUserPass.unicode(), SQL_NTS);
 
-		mySQLSetConnectAttr(hdbc_dre, SQL_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_OFF, 0);
-
 		mySQLAllocHandle(SQL_HANDLE_STMT, hdbc_dre, &hstmt_dre);
+
+		//purge table if required, 
+		//only purge once if there're multiple threads.
+		QMutexLocker locker(&m_mutex);
+		if (CGlobalDataSaver::GetInstance()->m_bCleanTable){
+			QString cmd = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("PURGEDATA %1")
+				.arg(CGlobalDataSaver::GetInstance()->m_sDataTable);
+			try {
+				mySQLExecDirect(hstmt_dre, (SQLWCHAR*)cmd.unicode(), SQL_NTS);
+			}
+			catch (...)
+			{
+				CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
+			}
+			CGlobalDataSaver::GetInstance()->m_bCleanTable = false;
+		}
+		locker.unlock();
+
+		mySQLSetConnectAttr(hdbc_dre, SQL_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_OFF, 0);
 	}
 	catch (...)
 	{
@@ -79,6 +98,7 @@ void DealENERGYDataThread::run()
 		SQLINTEGER params_processed = 0;
 
 		try {
+
 			mySQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAM_BIND_TYPE, (SQLPOINTER) sizeof(crm_mnp_npdb_energy), 0);
 
 			mySQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAMSET_SIZE, (SQLPOINTER)CGlobalDataSaver::GetInstance()->m_iDCSL, 0);
@@ -281,12 +301,14 @@ void DealENERGYDataThread::run()
 
 						m_iCommitedLine = m_iCurrlLine;
 						m_iCommitedSize = (m_iCurrlLine * (sizeof(crm_mnp_npdb_energy) + sizeof(SQLUSMALLINT)) / (1024 * 1024));
-						m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程已经写入[%2]行数据，剩余[%3]待写入")
-							.arg(m_iProcessID)
-							.arg(m_iCommitedLine)
-							.arg(m_iIDEnd - m_iIDStart - m_iCurrlLine + 1);
-						CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
-						CGlobalDataSaver::GetInstance()->m_pTableOut->item(m_iProcessID - 1, 2)->setText(QString("%1").arg(m_iCurrlLine));
+						if (!CGlobalDataSaver::GetInstance()->m_bDetailLogOff){
+							m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程已经写入[%2]行数据，剩余[%3]待写入")
+								.arg(m_iProcessID)
+								.arg(m_iCommitedLine)
+								.arg(m_iIDEnd - m_iIDStart - m_iCurrlLine + 1);
+							CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
+						}
+						//CGlobalDataSaver::GetInstance()->m_pTableOut->item(m_iProcessID - 1, 2)->setText(QString("%1").arg(m_iCurrlLine));
 						iCommitCount = 0;
 					}
 					if (m_iIDCurrent >= m_iIDEnd)

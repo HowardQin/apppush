@@ -24,7 +24,7 @@ public slots:
     virtual void OnBtnStopClicked();
 	void on_cbMeterNo_toggled();
 	void on_cbDays_toggled();
-
+	void on_usingInputId_toggled();
 
 private:
 	void SetTableName();

@@ -20,6 +20,7 @@ public:
 	DealMainServiceThread();
 	virtual ~DealMainServiceThread();
 	void stop();
+	//封装ODBC API，增加错误处理，出错时生成信息并抛出异常
 	void mySQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
 	void mySQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
 	void mySQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
@@ -32,15 +33,17 @@ public:
 		                             SQLWCHAR * Authentication,
 		                             SQLSMALLINT NameLength3);
 	void mySQLPrepare(SQLHSTMT StatementHandle, SQLWCHAR * StatementText, SQLINTEGER TextLength);
+	void mySQLExecDirect(SQLHSTMT StatementHandle, SQLWCHAR * StatementText, SQLINTEGER TextLength);
 	void mySQLExecute(SQLHSTMT StatementHandle);
 	void mySQLEndTran( SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT CompletionType);
-	void DealMainServiceThread::mySQLBindParameter(SQLHSTMT StatementHandle, SQLUSMALLINT ParameterNumber,
+	void mySQLBindParameter(SQLHSTMT StatementHandle, SQLUSMALLINT ParameterNumber,
                                                                                     SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
                                                                                     SQLSMALLINT ParameterType, SQLULEN ColumnSize,
                                                                                     SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,
                                                                                     SQLLEN BufferLength, SQLLEN * StrLen_or_IndPtr);
 
 public:
+	virtual void run();
 	bool m_bPause ;  /* 标志位，控制循环是否继续进行 2011/07/19 by zzg */
 	int    m_iProcessID ;
 	LONG64 m_iIDStart ;
@@ -53,11 +56,12 @@ public:
 	LONG64 m_iMeterIDStart ;
 	LONG64 m_iMeterIDEnd;
 	QDateTime m_dtStartJob ;
-	RunState	m_iJobflag; // 标志位，0 ： 正常任务, 执行完毕修改为1,  5：执行truncate 任务，执行完毕修改为 6, 9:异常
-	int    m_iTickCount;
-	virtual void run();
+	RunState	m_iJobflag = except;
+	int m_iTickCount;
+	int reTryCount = 0;
 	QString m_sMsg;
 	QDateTime m_dtPick;
+	static QMutex m_mutex;
 };
 
 #endif // DealMainServiceThread_H_ZZG

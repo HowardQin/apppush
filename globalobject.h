@@ -56,11 +56,12 @@ public:
 	QString m_sDbService     ;
 	int     m_iProcessNUM    ;
     bool    m_bCleanTable    ;
-	bool   m_bLogOff;
+	bool   m_bAllLogOff;
+	bool   m_bDetailLogOff;
+	int m_retryCount;
 	int     m_iDCSL          ;
 	int     m_iDataGM        ;
 	int     m_iDataZQ        ;
-	int		m_iDataTable	 ;
 	QString m_sDataTable	 ;
 	LONG64    m_iTotalLine     ;
 	LONG64    m_iCurrentLine   ;
@@ -101,7 +102,6 @@ private:
 private:
 	QMutex m_mutexRandom;
 	QMutex m_mutexPrintMsg;
-	QMutex m_mutex;
 	static QMutex m_mutexWriteRunLog;
 	QMutex m_mutexPageOut ;
 };

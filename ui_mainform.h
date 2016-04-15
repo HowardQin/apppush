@@ -25,7 +25,6 @@
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QTableWidget>
-#include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -38,6 +37,8 @@ public:
     QHBoxLayout *hboxLayout;
     QLabel *textLabel1_2_5_3_2;
     QComboBox *cbDataJS;
+    QCheckBox *usingInputId;
+    QLineEdit *idBaseInput;
     QSpacerItem *spacer2_2;
     QLabel *version_info;
     QHBoxLayout *hboxLayout1;
@@ -58,7 +59,11 @@ public:
     QSpinBox *sbConnNum;
     QLabel *textLabel1_2_5_2_2;
     QComboBox *cbDCSL;
-    QCheckBox *logOff;
+    QCheckBox *allLogOff;
+    QCheckBox *detailLogOff;
+    QCheckBox *emptyTable;
+    QLabel *label_5;
+    QSpinBox *retryCount;
     QSpacerItem *horizontalSpacer;
     QHBoxLayout *hboxLayout5;
     QLabel *textLabel1_2_5_3;
@@ -121,7 +126,6 @@ public:
     QProgressBar *pbJD;
     QHBoxLayout *horizontalLayout;
     QTableWidget *lblFileList;
-    QTextEdit *txtMsg;
 
     void setupUi(QWidget *mainform)
     {
@@ -150,6 +154,17 @@ public:
         cbDataJS->setObjectName(QStringLiteral("cbDataJS"));
 
         hboxLayout->addWidget(cbDataJS);
+
+        usingInputId = new QCheckBox(mainform);
+        usingInputId->setObjectName(QStringLiteral("usingInputId"));
+
+        hboxLayout->addWidget(usingInputId);
+
+        idBaseInput = new QLineEdit(mainform);
+        idBaseInput->setObjectName(QStringLiteral("idBaseInput"));
+        idBaseInput->setEnabled(false);
+
+        hboxLayout->addWidget(idBaseInput);
 
         spacer2_2 = new QSpacerItem(190, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
@@ -285,10 +300,32 @@ public:
 
         hboxLayout4->addWidget(cbDCSL);
 
-        logOff = new QCheckBox(mainform);
-        logOff->setObjectName(QStringLiteral("logOff"));
+        allLogOff = new QCheckBox(mainform);
+        allLogOff->setObjectName(QStringLiteral("allLogOff"));
 
-        hboxLayout4->addWidget(logOff);
+        hboxLayout4->addWidget(allLogOff);
+
+        detailLogOff = new QCheckBox(mainform);
+        detailLogOff->setObjectName(QStringLiteral("detailLogOff"));
+        detailLogOff->setChecked(true);
+
+        hboxLayout4->addWidget(detailLogOff);
+
+        emptyTable = new QCheckBox(mainform);
+        emptyTable->setObjectName(QStringLiteral("emptyTable"));
+
+        hboxLayout4->addWidget(emptyTable);
+
+        label_5 = new QLabel(mainform);
+        label_5->setObjectName(QStringLiteral("label_5"));
+
+        hboxLayout4->addWidget(label_5);
+
+        retryCount = new QSpinBox(mainform);
+        retryCount->setObjectName(QStringLiteral("retryCount"));
+        retryCount->setValue(5);
+
+        hboxLayout4->addWidget(retryCount);
 
         horizontalSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
@@ -718,13 +755,10 @@ public:
         __qtablewidgetitem4->setTextAlignment(Qt::AlignCenter);
         lblFileList->setHorizontalHeaderItem(4, __qtablewidgetitem4);
         lblFileList->setObjectName(QStringLiteral("lblFileList"));
+        lblFileList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustIgnored);
+        lblFileList->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
         horizontalLayout->addWidget(lblFileList);
-
-        txtMsg = new QTextEdit(mainform);
-        txtMsg->setObjectName(QStringLiteral("txtMsg"));
-
-        horizontalLayout->addWidget(txtMsg);
 
 
         vboxLayout->addLayout(horizontalLayout);
@@ -740,7 +774,7 @@ public:
 
     void retranslateUi(QWidget *mainform)
     {
-        mainform->setWindowTitle(QApplication::translate("mainform", "Qt5.5-\345\237\272\344\272\216ODBC\346\216\245\345\217\243\347\232\204\346\225\260\346\215\256\345\272\223\346\265\213\350\257\225\345\267\245\345\205\267 from \347\240\224\345\217\221\344\270\255\345\277\203", 0));
+        mainform->setWindowTitle(QApplication::translate("mainform", "ODBC\346\216\245\345\217\243\347\232\204\346\225\260\346\215\256\345\272\223\346\265\213\350\257\225\345\267\245\345\205\267", 0));
         textLabel1_2_5_3_2->setText(QApplication::translate("mainform", "ID\345\237\272\346\225\260", 0));
         cbDataJS->clear();
         cbDataJS->insertItems(0, QStringList()
@@ -763,6 +797,7 @@ public:
          << QApplication::translate("mainform", "180000000000000", 0)
          << QApplication::translate("mainform", "190000000000000", 0)
         );
+        usingInputId->setText(QApplication::translate("mainform", "\344\275\277\347\224\250\350\276\223\345\205\245", 0));
         version_info->setText(QApplication::translate("mainform", "ODBC \345\206\231\345\205\245\346\265\213\350\257\225", 0));
         textLabel1_2_4->setText(QApplication::translate("mainform", "\346\225\260\346\215\256\350\277\236\346\216\245\344\277\241\346\201\257 ", 0));
         textLabel1_2->setText(QApplication::translate("mainform", "\347\224\250\346\210\267\345\220\215", 0));
@@ -787,7 +822,10 @@ public:
          << QApplication::translate("mainform", "10000", 0)
          << QApplication::translate("mainform", "30000", 0)
         );
-        logOff->setText(QApplication::translate("mainform", "\345\205\263\351\227\255\346\227\245\345\277\227", 0));
+        allLogOff->setText(QApplication::translate("mainform", "\345\205\263\351\227\255\346\211\200\346\234\211\346\227\245\345\277\227", 0));
+        detailLogOff->setText(QApplication::translate("mainform", "\345\205\263\351\227\255\350\257\246\347\273\206\346\227\245\345\277\227", 0));
+        emptyTable->setText(QApplication::translate("mainform", "\346\270\205\347\251\272\350\241\250", 0));
+        label_5->setText(QApplication::translate("mainform", "\351\207\215\350\257\225\346\254\241\346\225\260", 0));
         textLabel1_2_5_3->setText(QApplication::translate("mainform", "\346\225\260\346\215\256\350\247\204\346\250\241\357\274\232", 0));
         cbDataGM->clear();
         cbDataGM->insertItems(0, QStringList()
@@ -813,10 +851,10 @@ public:
         textLabel1_2_5_2_3->setText(QApplication::translate("mainform", "\345\255\230\345\205\245\347\233\256\346\240\207\357\274\232", 0));
         cbYLMC->clear();
         cbYLMC->insertItems(0, QStringList()
-         << QApplication::translate("mainform", "\346\227\245\346\265\213\351\207\217\347\202\271\347\224\265\345\216\213\346\233\262\347\272\277\357\274\210E_MP_VOL_CURVE_P\357\274\211", 0)
-         << QApplication::translate("mainform", "\346\227\245\346\265\213\351\207\217\347\202\271\346\200\273\347\224\265\350\203\275\351\207\217\346\233\262\347\272\277\357\274\210E_MP_ENERGY_CURVE_P\357\274\211", 0)
-         << QApplication::translate("mainform", "\346\265\213\351\207\217\347\202\271\346\227\245\345\206\273\347\273\223\347\224\265\350\203\275\351\207\217\357\274\210E_MP_DAY_ENERGY_P\357\274\211", 0)
-         << QApplication::translate("mainform", "\346\265\213\350\257\225\347\224\250\346\234\200\345\260\217\345\214\226\350\241\250\357\274\210E_MIN_TABLE_P\357\274\211", 0)
+         << QApplication::translate("mainform", "E_MP_VOL_CURVE_P", 0)
+         << QApplication::translate("mainform", "E_MP_ENERGY_CURVE_P", 0)
+         << QApplication::translate("mainform", "E_MP_DAY_ENERGY_P", 0)
+         << QApplication::translate("mainform", "E_MIN_TABLE_P", 0)
         );
         rbInsert->setText(QApplication::translate("mainform", "INSERT", 0));
         rbUpsert->setText(QApplication::translate("mainform", "UPSERT INTO", 0));
@@ -826,7 +864,7 @@ public:
         btnStop->setText(QApplication::translate("mainform", "\345\201\234\346\255\242", 0));
         textLabel1_2_4_2_2->setText(QApplication::translate("mainform", "\345\220\210\350\256\241\344\272\247\347\224\237\357\274\232", 0));
         txtOUT1->setText(QApplication::translate("mainform", "0", 0));
-        label->setText(QApplication::translate("mainform", "\346\235\241\357\274\214", 0));
+        label->setText(QApplication::translate("mainform", "\346\235\241", 0));
         textLabel1_2_4_2_2_2->setText(QApplication::translate("mainform", "\345\215\240\347\224\250\347\251\272\351\227\264", 0));
         txtOUT2->setText(QApplication::translate("mainform", "0", 0));
         textLabel1_2_4_2_2_2_2->setText(QApplication::translate("mainform", "M", 0));
@@ -834,18 +872,18 @@ public:
         txtOUTt->setText(QApplication::translate("mainform", "0", 0));
         textLabel1_2_4_2_2_3->setText(QApplication::translate("mainform", "\346\200\273\345\271\263\345\235\207\357\274\232", 0));
         txtOUT3->setText(QApplication::translate("mainform", "0", 0));
-        textLabel1_2_4_2_2_2_3->setText(QApplication::translate("mainform", "\346\235\241\357\274\217s\357\274\214", 0));
+        textLabel1_2_4_2_2_2_3->setText(QApplication::translate("mainform", "\346\235\241/s\357\274\214", 0));
         txtOUT4->setText(QApplication::translate("mainform", "0", 0));
-        textLabel1_2_4_2_2_2_2_2->setText(QApplication::translate("mainform", "M\357\274\217s", 0));
+        textLabel1_2_4_2_2_2_2_2->setText(QApplication::translate("mainform", "M/s", 0));
         textLabel1_2_4_2_2_3_2->setText(QApplication::translate("mainform", "\347\224\250\346\227\266\357\274\232", 0));
         txtOUTs->setText(QApplication::translate("mainform", "0", 0));
         textLabel1_2_4_2_2_2_3_2->setText(QApplication::translate("mainform", "\347\247\222", 0));
         textLabel1_2_4_2_2_3_3->setText(QApplication::translate("mainform", "10\345\210\206\351\222\237\345\271\263\345\235\207\357\274\232", 0));
         txtOUT5->setText(QApplication::translate("mainform", "0", 0));
-        label_2->setText(QApplication::translate("mainform", "\346\235\241\357\274\217s\357\274\214", 0));
+        label_2->setText(QApplication::translate("mainform", "\346\235\241/s", 0));
         textLabel1_2_4_2_2_2_3_3->setText(QApplication::translate("mainform", "10 \345\210\206\351\222\237\346\234\200\345\244\247\345\200\274", 0));
         txtOUT7->setText(QApplication::translate("mainform", "0", 0));
-        textLabel1_2_4_2_2_2_3_3_2->setText(QApplication::translate("mainform", "\346\235\241\357\274\217s", 0));
+        textLabel1_2_4_2_2_2_3_3_2->setText(QApplication::translate("mainform", "\346\235\241/s", 0));
         QTableWidgetItem *___qtablewidgetitem = lblFileList->horizontalHeaderItem(0);
         ___qtablewidgetitem->setText(QApplication::translate("mainform", "ID\350\265\267\345\247\213\345\200\274", 0));
         QTableWidgetItem *___qtablewidgetitem1 = lblFileList->horizontalHeaderItem(1);
@@ -853,7 +891,7 @@ public:
         QTableWidgetItem *___qtablewidgetitem2 = lblFileList->horizontalHeaderItem(2);
         ___qtablewidgetitem2->setText(QApplication::translate("mainform", "\345\267\262\344\272\247\347\224\237\350\256\260\345\275\225\346\225\260", 0));
         QTableWidgetItem *___qtablewidgetitem3 = lblFileList->horizontalHeaderItem(3);
-        ___qtablewidgetitem3->setText(QApplication::translate("mainform", "\345\267\262\344\272\247\347\224\237\345\255\227\350\212\202\346\225\260\357\274\210M\357\274\211", 0));
+        ___qtablewidgetitem3->setText(QApplication::translate("mainform", "\345\267\262\344\272\247\347\224\237\345\255\227\350\212\202(M)", 0));
         QTableWidgetItem *___qtablewidgetitem4 = lblFileList->horizontalHeaderItem(4);
         ___qtablewidgetitem4->setText(QApplication::translate("mainform", "\344\273\273\345\212\241\350\265\267\345\247\213\346\227\266\351\227\264", 0));
     } // retranslateUi

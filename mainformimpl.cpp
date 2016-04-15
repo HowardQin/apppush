@@ -22,85 +22,25 @@
 
 void mainformImpl::SetDataJS()
 {
-	LONG64 iIdBase = 100000000000001 ;
-	switch (ui->cbDataJS->currentIndex())
+	LONG64 iIdBase;
+	if (ui->usingInputId->isChecked())
 	{
-	case 0 :
-		iIdBase = 100000000000001 ;
-		break ;
-	case 1:
-		iIdBase = 200000000000001 ;
-		break ;
-	case 2:
-		iIdBase = 300000000000001 ;
-		break ;
-	case 3:
-		iIdBase = 400000000000001 ;
-		break ;
-	case 4:
-		iIdBase = 500000000000001 ;
-		break ;
-	case 5:
-		iIdBase = 600000000000001 ;
-		break ;
-	case 6:
-		iIdBase = 700000000000001 ;
-		break ;
-	case 7:
-		iIdBase = 800000000000001 ;
-		break ;
-	case 8:
-		iIdBase = 900000000000001 ;
-		break ;
-	case 9:
-		iIdBase = 110000000000001 ;
-		break ;
-	case 10:
-		iIdBase = 120000000000001 ;
-		break ;
-	case 11:
-		iIdBase = 130000000000001 ;
-		break ;
-	case 12:
-		iIdBase = 140000000000001 ;
-		break ;
-	case 13:
-		iIdBase = 150000000000001 ;
-		break ;
-	case 14:
-		iIdBase = 160000000000001 ;
-		break ;
-	case 15:
-		iIdBase = 170000000000001 ;
-		break ;
-	case 16:
-		iIdBase = 180000000000001 ;
-		break ;
-	case 17:
-		iIdBase = 190000000000001 ;
+		bool ok;
+		iIdBase = ui->idBaseInput->text().toInt(&ok, 10);
+		Q_ASSERT(ok);
+	}
+	else
+	{
+		iIdBase = ui->cbDataJS->currentText().toLongLong();
 	}
 	CGlobalDataSaver::GetInstance()->m_iDataIDStart = CGlobalDataSaver::GetInstance()->m_iMeterIDStart = iIdBase ;
 }
 
 void mainformImpl::SetTableName()
 {
-	CGlobalDataSaver::GetInstance()->m_iDataTable = ui->cbYLMC->currentIndex();  //这个要想用上就需要设计 DealMainServiceThread 的重载函数，或者在 DealMainServiceThread 中进行判断
-	switch (CGlobalDataSaver::GetInstance()->m_iDataTable)
-	{
-	case 0 : //日测量点电压曲线表
-		CGlobalDataSaver::GetInstance()->m_sDataTable = "E_MP_VOL_CURVE_P" ;
-		break ;
-	case 1 : // 日测量点总电能量曲线表
-		CGlobalDataSaver::GetInstance()->m_sDataTable = "E_MP_ENERGY_CURVE_P" ;
-		break ;
-	case 2 : // 测量点日冻结电能量表
-		CGlobalDataSaver::GetInstance()->m_sDataTable = "E_MP_DAY_ENERGY_P" ;
-		break ;
-	case 3 : //测试用最小化表
-		CGlobalDataSaver::GetInstance()->m_sDataTable = "E_MIN_TABLE_P" ;
-		break ;
-	}
+	CGlobalDataSaver::GetInstance()->m_sDataTable = ui->cbYLMC->currentText();
 }
+
 void mainformImpl::OnBtnPauseClicked()
 {
 
@@ -115,7 +55,11 @@ mainformImpl::mainformImpl( QWidget* parent)
 	: QWidget(parent), ui (new Ui::mainform)
 {
 	ui->setupUi(this);
-	CGlobalDataSaver::GetInstance()->m_pTxtOut = ui->txtMsg ;
+	ui->lblFileList->horizontalHeader()->setStretchLastSection(true);//关键  
+	ui->lblFileList->setColumnWidth(0, 200);
+	ui->lblFileList->setColumnWidth(1, 100);
+	ui->lblFileList->setColumnWidth(2, 150);
+	ui->lblFileList->setColumnWidth(3, 100);
 	CGlobalDataSaver::GetInstance()->m_pTableOut = ui->lblFileList;
 	CGlobalDataSaver::GetInstance()->m_iDataIDStart = CGlobalDataSaver::GetInstance()->m_iMeterIDStart = 100000000000001 ;
 	CGlobalDataSaver::GetInstance()->m_iMeterNumber  = 0 ;
@@ -148,6 +92,7 @@ mainformImpl::mainformImpl( QWidget* parent)
 		in >> str; //read odbc connection name
 		ui->txtConnName->setText(str);
 	}
+	m_pTimer2->start(2000);
 }
 
 /*  
@@ -184,58 +129,75 @@ void mainformImpl::OnTimerOut2()
 			continue;
 		if (pCurrThread->m_iProcessID <= 0)
 			continue;
-
-		ui->lblFileList->item(iT, 0)->setText(QString::number(pCurrThread->m_iMeterIDStart));
+		Qt::GlobalColor color;
 		if (pCurrThread->m_iJobflag == RunState::insert)
 		{
 			ui->lblFileList->item(iT, 1)->setText(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("进行中"));
 			iActiveProcess++;
+			color = Qt::darkGreen;
 		}
 		else if (pCurrThread->m_iJobflag == RunState::doneInsert)
 		{
 			ui->lblFileList->item(iT, 1)->setText(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("结束"));
+			color = Qt::black;
 		}
 		else
 		{
 			ui->lblFileList->item(iT, 1)->setText(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("异常"));
+			color = Qt::red;
+			//restart
+			if (pCurrThread->reTryCount < CGlobalDataSaver::GetInstance()->m_retryCount)
+			{
+				pCurrThread->reTryCount++;
+				pCurrThread->m_iJobflag = RunState::insert;
+				pCurrThread->start();
+			}
 		}
 		iCurrLineSum += pCurrThread->m_iCommitedLine;
 		iCurrSizeSum += pCurrThread->m_iCommitedSize;
 		ui->lblFileList->item(iT, 2)->setText(QString::number(pCurrThread->m_iCommitedLine));
 		ui->lblFileList->item(iT, 3)->setText(QString::number(pCurrThread->m_iCommitedSize));
-		ui->lblFileList->item(iT, 4)->setText(pCurrThread->m_dtStartJob.toString("yyyy-MM-dd hh:ss:mi"));
-	}
+		ui->lblFileList->item(iT, 4)->setText(pCurrThread->m_dtStartJob.toString("yyyy-MM-dd hh:mm:ss"));
+
+		ui->lblFileList->item(iT, 0)->setForeground(color);
+		ui->lblFileList->item(iT, 1)->setForeground(color);
+		ui->lblFileList->item(iT, 2)->setForeground(color);
+		ui->lblFileList->item(iT, 3)->setForeground(color);
+		ui->lblFileList->item(iT, 4)->setForeground(color);
+	}//for
+	//update table view
+	ui->lblFileList->viewport()->update();
 
 	ui->pbJD->setValue(iCurrLineSum);
 	ui->txtOUT1->setText(QString::number(iCurrLineSum));
 	ui->txtOUT2->setText(QString::number(iCurrSizeSum));
 
-	if (iActiveProcess > 0){
+	if (iActiveProcess > 0) {
 		QDateTime dtCurr = QDateTime::currentDateTime();
 		iSecPass = CGlobalDataSaver::GetInstance()->m_dtProcessStart.secsTo(dtCurr);
-		ui->txtOUTs->setText(QString::number(iSecPass));
-		ui->txtOUT3->setText(QString::number((LONG64)(iCurrLineSum / iSecPass)));
-		ui->txtOUT4->setText(QString::number((double)(iCurrSizeSum / iSecPass)));
-
-		int iPassSec = m_dtLasteTime.secsTo(dtCurr);
-		if (iPassSec >= 10 * 60/* 十分钟 [2016-3-6 by zzg] */)
-		{
-			LONG64 iCol10 = (iCurrLineSum - m_iLasteInster) / iPassSec;
-			ui->txtOUT5->setText(QString::number(iCol10));
-			m_iLasteInster = iCurrLineSum;
-			if (iCol10 > m_iMax10)
+		if (iSecPass > 0){
+			ui->txtOUTs->setText(QString::number(iSecPass));
+			ui->txtOUT3->setText(QString::number((LONG64)(iCurrLineSum / iSecPass)));
+			ui->txtOUT4->setText(QString::number(iCurrSizeSum / (double)iSecPass));
+			//从开始启动线程到现在的秒数
+			int iPassSec = m_dtLasteTime.secsTo(dtCurr);
+			//十分钟统计一次 ,并打印日志
+			if (iPassSec >= 10 * 60)
 			{
-				m_iMax10 = iCol10;
-			}
-			m_dtLasteTime = dtCurr;
-			ui->txtOUT7->setText(QString::number(m_iMax10));
+				LONG64 iCol10 = (iCurrLineSum - m_iLasteInster) / iPassSec;
+				ui->txtOUT5->setText(QString::number(iCol10));
+				m_iLasteInster = iCurrLineSum;
+				if (iCol10 > m_iMax10)
+				{
+					m_iMax10 = iCol10;
+				}
 
-			/* 写到日志里 [2016-3-6 by zzg] */
-			if (iSecPass % 10 == 0)  /* 10 秒钟写一次 [2016-3-6 by zzg] */
-			{
-				m_msg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("当前进度[%1%],用时[%6]s \r\n合计产生[%2],"
-					"占用空间[%3],总平均[%4]条／s，[%5]M／s \r\n"
-					"10分钟平均[%7]条／s，10分钟最大[%8]条／s")
+				m_dtLasteTime = dtCurr;
+				//十分钟最大条数
+				ui->txtOUT7->setText(QString::number(m_iMax10));
+
+				m_msg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("当前进度%1%, 用时%6s 合计产生%2条, "
+					"占用空间%3M, 总平均%4条/s, %5M/s, 10分钟平均%7条/s, 10分钟最大%8条/s")
 					.arg((int)((iCurrLineSum * 100) / CGlobalDataSaver::GetInstance()->m_iTotalLine))
 					.arg(QString::number(iCurrLineSum))
 					.arg(QString::number(iCurrSizeSum))
@@ -244,17 +206,30 @@ void mainformImpl::OnTimerOut2()
 					.arg(QString::number(iSecPass))
 					.arg(QString::number(iCol10))
 					.arg(QString::number(m_iMax10));
+
 				CGlobalDataSaver::GetInstance()->PrintMsg(m_msg);
-			}
-		}
-    }
+			}//if (/* 十分钟统计一次 */)
+		}//if(iSecPass > 0)
+    }//if(iActiveProcess > 0)
 	else
 	{
 		ui->btnStart->setEnabled(true);
-		m_pTimer2->stop();
 	}
 }
 
+void mainformImpl::on_usingInputId_toggled()
+{
+	if (ui->usingInputId->isChecked())
+	{
+		ui->idBaseInput->setEnabled(true);
+		ui->cbDataJS->setEnabled(false);
+	}
+	else
+	{
+		ui->idBaseInput->setEnabled(false);
+		ui->cbDataJS->setEnabled(true);
+	}
+}
 
 void mainformImpl::on_cbMeterNo_toggled()
 {
@@ -292,9 +267,13 @@ void mainformImpl::OnBtnStartClicked()
 	CGlobalDataSaver::GetInstance()->m_sDbService = ui->txtConnName->text().simplified();
 	CGlobalDataSaver::GetInstance()->m_iProcessNUM = iProcessNum = ui->sbConnNum->value();
 	CGlobalDataSaver::GetInstance()->m_iDCSL = ui->cbDCSL->currentText().toInt();
+	CGlobalDataSaver::GetInstance()->m_retryCount = ui->retryCount->value();
 	CGlobalDataSaver::GetInstance()->m_iDataGM = ui->cbDataGM->currentIndex();
 	CGlobalDataSaver::GetInstance()->m_iDataZQ = ui->cbDataZQ->currentIndex();
-	CGlobalDataSaver::GetInstance()->m_bLogOff = ui->logOff->isChecked();
+	CGlobalDataSaver::GetInstance()->m_bAllLogOff = ui->allLogOff->isChecked();
+	CGlobalDataSaver::GetInstance()->m_bDetailLogOff = ui->detailLogOff->isChecked();
+	CGlobalDataSaver::GetInstance()->m_bCleanTable = ui->emptyTable->isChecked();
+
 	if (ui->rbInsert->isChecked())
 		CGlobalDataSaver::GetInstance()->m_InsertType = InsertType::INSERT_INTO;
 	else if (ui->rbUpsert->isChecked())
@@ -450,19 +429,19 @@ void mainformImpl::OnBtnStartClicked()
 	for (int iT = 0 ; iT < iProcessNum ; iT++)
 	{
 		DealMainServiceThread * pCurrThread = NULL ;
-		if (0 == CGlobalDataSaver::GetInstance()->m_iDataTable)
+		if ("E_MP_VOL_CURVE_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
 		{
 			pCurrThread = (DealMainServiceThread * )new DealVolDataThread();
 		}
-		else if (1 == CGlobalDataSaver::GetInstance()->m_iDataTable)
+		else if ("E_MP_ENERGY_CURVE_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
 		{
 			pCurrThread = (DealMainServiceThread * )new DealENERGYDataThread();
 		}
-		else if (2 == CGlobalDataSaver::GetInstance()->m_iDataTable)
+		else if ("E_MP_DAY_ENERGY_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
 		{
 			pCurrThread = (DealMainServiceThread * )new DealDayENERGYDataThread();
 		}
-		else if (3 == CGlobalDataSaver::GetInstance()->m_iDataTable)
+		else if ("E_MIN_TABLE_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
 		{
 			pCurrThread = (DealMainServiceThread * )new DealMinTableDataThread();
 		}
@@ -491,7 +470,7 @@ void mainformImpl::OnBtnStartClicked()
 		pCurrThread->m_iIDEnd = pCurrThread->m_iIDStart + iLineCurrProcessUsed -1 ;
 		iLineTotalUsed += iLineCurrProcessUsed ;
 	
-		CGlobalDataSaver::GetInstance()->m_lThreads[iT] = pCurrThread ;
+		CGlobalDataSaver::GetInstance()->m_lThreads[iT] = pCurrThread;
 
 		/* 写到table 里 [2016-3-4 by zzg] */
 		ui->lblFileList->setItem(iT, 0, new QTableWidgetItem(QString::number(pCurrThread->m_iIDStart)));
@@ -501,11 +480,5 @@ void mainformImpl::OnBtnStartClicked()
 		ui->lblFileList->setItem(iT, 4, new QTableWidgetItem(""));
 		pCurrThread->start();
 
-#ifdef Q_OS_WIN32
-		Sleep(1000);
-#else
-		sleep(1);
-#endif
 	}//for
-	m_pTimer2->start(800);
 }
