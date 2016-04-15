@@ -24,102 +24,42 @@ void DealDayENERGYDataThread::stop()
 }
 
 void DealDayENERGYDataThread::run()
-{ 
-	SQLWCHAR * sErrorMsg = NULL; 
-
+{
 	//任务开始
 	m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程已启动，准备连接数据库[%2]")
 		.arg(m_iProcessID)
 		.arg(CGlobalDataSaver::GetInstance()->m_sDbService);
 	CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
 
-	SQLHENV henv;
-	SQLHDBC hdbc_dre;
-	SQLHSTMT hstmt_dre;
-	SQLRETURN rc;
+	SQLHENV henv = 0;
+	SQLHDBC hdbc_dre = 0;
+	SQLHSTMT hstmt_dre = 0;
+
 	//申请ODBC环境、连接及SQL句柄并设置
-	rc = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
-	if (!SQL_SUCCEEDED(rc)) 
-	{
-		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程申请ODBC环境、连接及SQL句柄出错，错误码[%2]，进程将退出")
-			.arg(m_iProcessID)
-			.arg(rc);
-		CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
-		return ;
-	}
+	try {
+	    mySQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
 
-	rc = SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (SQL_OV_ODBC3), SQL_IS_UINTEGER);
-	if (!SQL_SUCCEEDED(rc)) 
+		mySQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)(SQL_OV_ODBC3), SQL_IS_UINTEGER);
+
+		mySQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc_dre);
+
+	   //5秒连接超时
+	   mySQLSetConnectAttr(hdbc_dre, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
+
+	   mySQLConnect(hdbc_dre, (SQLWCHAR*)CGlobalDataSaver::GetInstance()->m_sDbService.unicode(), SQL_NTS,
+		                                        (SQLWCHAR*)CGlobalDataSaver::GetInstance()->m_sDbUserName.unicode(), SQL_NTS,
+		                                        (SQLWCHAR*)CGlobalDataSaver::GetInstance()->m_sDbUserPass.unicode(), SQL_NTS);
+
+	    mySQLSetConnectAttr(hdbc_dre, SQL_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_OFF, 0);
+
+	    mySQLAllocHandle(SQL_HANDLE_STMT, hdbc_dre, &hstmt_dre);
+    }
+	catch (...)
 	{
-		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLSetEnvAttr出错，错误码[%2]，进程将退出")
-			.arg(m_iProcessID)
-			.arg(rc);
+		CleanDBConnect(hstmt_dre, hdbc_dre, henv);
 		CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
 		m_iJobflag = RunState::except;
-		SQLFreeHandle(SQL_HANDLE_ENV, henv);
-		return ;
-	}
-
-	rc = SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc_dre); 
-	if (!SQL_SUCCEEDED(rc))  
-	{
-		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc_dre)出错，错误码[%2]，进程将退出")
-			.arg(m_iProcessID)
-			.arg(rc);
-		CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
-		m_iJobflag = RunState::except;
-		SQLFreeHandle(SQL_HANDLE_ENV, henv);
-		return ;
-	}
-
-	rc = SQLSetConnectAttr(hdbc_dre, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
-
-	rc = SQLConnect(hdbc_dre, (SQLWCHAR*)CGlobalDataSaver::GetInstance()->m_sDbService.unicode(), SQL_NTS,
-		                                        (SQLWCHAR*)CGlobalDataSaver::GetInstance()->m_sDbUserName.unicode(), SQL_NTS, 
-												(SQLWCHAR*)CGlobalDataSaver::GetInstance()->m_sDbUserPass.unicode(), SQL_NTS);
-	if (!SQL_SUCCEEDED(rc)) 
-	{
-		sErrorMsg = diagnostic(SQL_HANDLE_DBC, hdbc_dre);
-		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程建立数据库连接出错，错误码[%2][%3]，进程将退出")
-			.arg(m_iProcessID)
-			.arg(rc)
-			.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char * )sErrorMsg));
-		CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
-		m_iJobflag = RunState::except;
-		SQLFreeHandle(SQL_HANDLE_DBC, hdbc_dre);
-		SQLFreeHandle(SQL_HANDLE_ENV, henv);
-		return ;
-	}
-	
-	rc = SQLSetConnectAttr(hdbc_dre, SQL_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_OFF, 0 );
-	if (!SQL_SUCCEEDED(rc)) 
-	{
-		sErrorMsg = diagnostic(SQL_HANDLE_DBC, hdbc_dre);
-		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLSetConnectAttr出错，错误码[%2][%3]，进程将退出")
-			.arg(m_iProcessID)
-			.arg(rc).arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char * )sErrorMsg));;
-		CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
-		m_iJobflag = RunState::except;
-		SQLDisconnect(hdbc_dre);
-		SQLFreeHandle(SQL_HANDLE_DBC, hdbc_dre);
-		SQLFreeHandle(SQL_HANDLE_ENV, henv);
-		return ;
-	}
-
-	rc = SQLAllocHandle(SQL_HANDLE_STMT, hdbc_dre, &hstmt_dre); 
-	if (!SQL_SUCCEEDED(rc)) 
-	{
-		sErrorMsg = diagnostic(SQL_HANDLE_STMT, hstmt_dre);
-		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLAllocHandle出错，错误码[%2][%3]，进程将退出")
-			.arg(m_iProcessID)
-			.arg(rc)
-			.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char * )sErrorMsg));;
-		CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
-		m_iJobflag = RunState::except;
-		SQLDisconnect(hdbc_dre);
-		SQLFreeHandle(SQL_HANDLE_DBC, hdbc_dre);
-		SQLFreeHandle(SQL_HANDLE_ENV, henv);
-		return ;
+		return;
 	}
 	m_dtPick = QDateTime::currentDateTime();
 	m_dtStartJob = m_dtPick;
@@ -133,56 +73,23 @@ void DealDayENERGYDataThread::run()
 		SQLUSMALLINT *param_status = (SQLUSMALLINT *)malloc(CGlobalDataSaver::GetInstance()->m_iDCSL * sizeof(SQLUSMALLINT));
 		SQLINTEGER params_processed = 0;
 		try {
-			rc = SQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAM_BIND_TYPE, (SQLPOINTER) sizeof(crm_mnp_npdb_day_energy), 0);
-			if (!SQL_SUCCEEDED(rc))
-			{
-				sErrorMsg = diagnostic(SQL_HANDLE_STMT, hstmt_dre);
-				m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程 SQLSetStmtAttr 出错，错误码[%2][%3]，进程将退出")
-					.arg(m_iProcessID)
-					.arg(rc)
-					.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
-				throw m_sMsg;
-			}
-			rc = SQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAMSET_SIZE, (SQLPOINTER)CGlobalDataSaver::GetInstance()->m_iDCSL, 0);
-			if (!SQL_SUCCEEDED(rc))
-			{
-				sErrorMsg = diagnostic(SQL_HANDLE_STMT, hstmt_dre);
-				m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程 SQLSetStmtAttr 出错，错误码[%2][%3]，进程将退出")
-					.arg(m_iProcessID)
-					.arg(rc)
-					.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));;
-				throw m_sMsg;
-			}
-			rc = SQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAM_STATUS_PTR, param_status, 0);
-			if (!SQL_SUCCEEDED(rc))
-			{
-				sErrorMsg = diagnostic(SQL_HANDLE_STMT, hstmt_dre);
-				m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程 SQLSetStmtAttr 出错，错误码[%2][%3]，进程将退出")
-					.arg(m_iProcessID)
-					.arg(rc)
-					.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
-				throw m_sMsg;
-			}
-			rc = SQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAMS_PROCESSED_PTR, &params_processed, 0);
-			if (!SQL_SUCCEEDED(rc))
-			{
-				sErrorMsg = diagnostic(SQL_HANDLE_STMT, hstmt_dre);
-				m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程 SQLSetStmtAttr 出错，错误码[%2][%3]，进程将退出")
-					.arg(m_iProcessID)
-					.arg(rc)
-					.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
-				throw m_sMsg;
-			}
+			mySQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAM_BIND_TYPE, (SQLPOINTER) sizeof(crm_mnp_npdb_day_energy), 0);
 
-			rc = SQLBindParameter(hstmt_dre, 1, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_vol_cur_id, 0, &po[0].vol_cur_id, sizeof(po[0].vol_cur_id), &po[0].len_vol_cur_id);
-			rc = SQLBindParameter(hstmt_dre, 2, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_meter_id, 0, &po[0].meter_id, sizeof(po[0].meter_id), &po[0].len_meter_id);
-			rc = SQLBindParameter(hstmt_dre, 3, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, SQL_TIMESTAMP, po[0].len_data_date, 0, &po[0].data_date, sizeof(po[0].data_date), &po[0].len_data_date);
-			rc = SQLBindParameter(hstmt_dre, 4, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, SQL_TIMESTAMP, po[0].len_metering_time, 0, &po[0].metering_time, sizeof(po[0].metering_time), &po[0].len_metering_time);
-			rc = SQLBindParameter(hstmt_dre, 5, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_V1, 0, &po[0].V1, sizeof(po[0].V1), &po[0].len_V1);
-			rc = SQLBindParameter(hstmt_dre, 6, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_V2, 0, &po[0].V2, sizeof(po[0].V2), &po[0].len_V2);
-			rc = SQLBindParameter(hstmt_dre, 7, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_V3, 0, &po[0].V3, sizeof(po[0].V3), &po[0].len_V3);
-			rc = SQLBindParameter(hstmt_dre, 8, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_V4, 0, &po[0].V4, sizeof(po[0].V4), &po[0].len_V4);
-			rc = SQLBindParameter(hstmt_dre, 9, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_V5, 0, &po[0].V5, sizeof(po[0].V5), &po[0].len_V5);
+			mySQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAMSET_SIZE, (SQLPOINTER)CGlobalDataSaver::GetInstance()->m_iDCSL, 0);
+
+			mySQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAM_STATUS_PTR, param_status, 0);
+
+			mySQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAMS_PROCESSED_PTR, &params_processed, 0);
+
+			mySQLBindParameter(hstmt_dre, 1, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_vol_cur_id, 0, &po[0].vol_cur_id, sizeof(po[0].vol_cur_id), &po[0].len_vol_cur_id);
+			mySQLBindParameter(hstmt_dre, 2, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_meter_id, 0, &po[0].meter_id, sizeof(po[0].meter_id), &po[0].len_meter_id);
+			mySQLBindParameter(hstmt_dre, 3, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, SQL_TIMESTAMP, po[0].len_data_date, 0, &po[0].data_date, sizeof(po[0].data_date), &po[0].len_data_date);
+			mySQLBindParameter(hstmt_dre, 4, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, SQL_TIMESTAMP, po[0].len_metering_time, 0, &po[0].metering_time, sizeof(po[0].metering_time), &po[0].len_metering_time);
+			mySQLBindParameter(hstmt_dre, 5, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_V1, 0, &po[0].V1, sizeof(po[0].V1), &po[0].len_V1);
+			mySQLBindParameter(hstmt_dre, 6, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_V2, 0, &po[0].V2, sizeof(po[0].V2), &po[0].len_V2);
+			mySQLBindParameter(hstmt_dre, 7, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_V3, 0, &po[0].V3, sizeof(po[0].V3), &po[0].len_V3);
+			mySQLBindParameter(hstmt_dre, 8, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_V4, 0, &po[0].V4, sizeof(po[0].V4), &po[0].len_V4);
+			mySQLBindParameter(hstmt_dre, 9, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_DOUBLE, po[0].len_V5, 0, &po[0].V5, sizeof(po[0].V5), &po[0].len_V5);
 
 			m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程数据库准备完毕，准备进入数据生成循环")
 				.arg(m_iProcessID)
@@ -205,16 +112,8 @@ void DealDayENERGYDataThread::run()
 				throw m_sMsg;
 			}
 
-			rc = SQLPrepare(hstmt_dre, (SQLWCHAR*)statement.unicode(), SQL_NTS);
-			if (!SQL_SUCCEEDED(rc))
-			{
-				sErrorMsg = diagnostic(SQL_HANDLE_STMT, hstmt_dre);
-				m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程 SQLPrepare 出错，错误码[%2][%3]，进程将退出")
-					.arg(m_iProcessID)
-					.arg(rc)
-					.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
-				throw m_sMsg;
-			}
+			mySQLPrepare(hstmt_dre, (SQLWCHAR*)statement.unicode(), SQL_NTS);
+
 			/* 外层按照日期递增循环 [2016-3-4 by zzg] */
 			for (iCurrDay = 0; CGlobalDataSaver::GetInstance()->m_dtDataStart.addDays(iCurrDay) <= CGlobalDataSaver::GetInstance()->m_dtDataEnd; iCurrDay++)
 			{
@@ -258,43 +157,13 @@ void DealDayENERGYDataThread::run()
 					if (m_iTickCount >= CGlobalDataSaver::GetInstance()->m_iDCSL || m_iIDCurrent >= m_iIDEnd)
 					{
 						/* 提交一次 [2016-3-4 by zzg] */
-						rc = SQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAMSET_SIZE, (SQLPOINTER)m_iTickCount, 0);
-						if (rc != SQL_SUCCESS)
-						{
-							sErrorMsg = diagnostic(SQL_HANDLE_STMT, hstmt_dre);
-							m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLSetStmtAttr异常退出！已经写入[%2]行数据，剩余[%3]待写入[%4]")
-								.arg(m_iProcessID)
-								.arg(m_iCurrlLine)
-								.arg(m_iIDEnd - m_iIDStart - m_iCurrlLine + 1)
-								.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
-							throw m_sMsg;
-						}
+						mySQLSetStmtAttr(hstmt_dre, SQL_ATTR_PARAMSET_SIZE, (SQLPOINTER)m_iTickCount, 0);
 
-						rc = SQLExecute(hstmt_dre);
-						if (rc != SQL_SUCCESS)
-						{
-							sErrorMsg = diagnostic(SQL_HANDLE_STMT, hstmt_dre);
-							m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLExecute异常退出！已经写入[%2]行数据，剩余[%3]待写入[%4]")
-								.arg(m_iProcessID)
-								.arg(m_iCurrlLine)
-								.arg(m_iIDEnd - m_iIDStart - m_iCurrlLine + 1)
-								.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
-							throw m_sMsg;
-						}
+						mySQLExecute(hstmt_dre);
 
 						m_iTickCount = 0;
 						/* 提交事物并发出提醒 [2016-3-4 by zzg] */
-						rc = SQLEndTran(SQL_HANDLE_DBC, hdbc_dre, SQL_COMMIT);
-						if (!SQL_SUCCEEDED(rc))
-						{
-							sErrorMsg = diagnostic(SQL_HANDLE_STMT, hdbc_dre);
-							m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLEndTran异常退出！已经写入[%2]行数据，剩余[%3]待写入[%4]")
-								.arg(m_iProcessID)
-								.arg(m_iCurrlLine)
-								.arg(m_iIDEnd - m_iIDStart - m_iCurrlLine + 1)
-								.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
-							throw m_sMsg;
-						}
+						mySQLEndTran(SQL_HANDLE_DBC, hdbc_dre, SQL_COMMIT);
 
 						m_iCommitedLine = m_iCurrlLine;
 						m_iCommitedSize = (m_iCurrlLine * (sizeof(crm_mnp_npdb_day_energy) + sizeof(SQLUSMALLINT)) / (1024 * 1024));
@@ -314,23 +183,19 @@ void DealDayENERGYDataThread::run()
 			}//for
 
 			/* 提交事务并发出提醒 [2016-3-4 by zzg] */
-			rc = SQLEndTran(SQL_HANDLE_DBC, hdbc_dre, SQL_COMMIT);
-			if (!SQL_SUCCEEDED(rc))
-			{
-				sErrorMsg = diagnostic(SQL_HANDLE_STMT, hdbc_dre);
-				m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程SQLEndTran异常退出！已经写入[%2]行数据，剩余[%3]待写入[%4]")
-					.arg(m_iProcessID)
-					.arg(m_iCurrlLine)
-					.arg(m_iIDEnd - m_iIDStart - m_iCurrlLine + 1)
-					.arg(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode((char *)sErrorMsg));
-				throw m_sMsg;
-			}
+			mySQLEndTran(SQL_HANDLE_DBC, hdbc_dre, SQL_COMMIT);
 			m_iCommitedLine = m_iCurrlLine;
 			m_iCommitedSize = (LONG64)((m_iCurrlLine * (sizeof(crm_mnp_npdb_day_energy) + sizeof(SQLUSMALLINT))) / (1024 * 1024));
 			free(po);
 			free(param_status);
 			CleanDBConnect(hstmt_dre, hdbc_dre, henv);
-		}
+			m_iJobflag = RunState::doneInsert;
+			m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程已经写入完毕，共写入[%2]行数据，用时[%3]秒")
+				.arg(m_iProcessID)
+				.arg(m_iCurrlLine)
+				.arg(m_dtPick.secsTo(QDateTime::currentDateTime()));
+			CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
+		}//try
 		catch (...)
 		{
 			free(po);
@@ -340,17 +205,7 @@ void DealDayENERGYDataThread::run()
 			m_iJobflag = RunState::except;
 			return;
 		}
-	}
-
-	if (RunState::insert == m_iJobflag)
-	{
-		m_iJobflag = RunState::doneInsert;
-		m_sMsg = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("第[%1]进程已经写入完毕，共写入[%2]行数据，用时[%3]秒")
-			.arg(m_iProcessID)
-			.arg(m_iCurrlLine)
-			.arg(m_dtPick.secsTo(QDateTime::currentDateTime()));
-		CGlobalDataSaver::GetInstance()->PrintMsg(m_sMsg);
-	}
+	}//if (RunState::insert == m_iJobflag )
 }
 
 

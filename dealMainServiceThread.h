@@ -6,7 +6,7 @@
 #endif // _MSC_VER > 1000
 
 #include "globalobject.h"
-
+#include "SQLFuncPublic.h"
 #include <qthread.h>
 #include <qlabel.h>
 #include <qstringlist.h>
@@ -20,6 +20,25 @@ public:
 	DealMainServiceThread();
 	virtual ~DealMainServiceThread();
 	void stop();
+	void mySQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
+	void mySQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
+	void mySQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
+	void mySQLAllocHandle(SQLSMALLINT HandleType, SQLHANDLE InputHandle, SQLHANDLE * OutputHandlePtr);
+	void mySQLConnect(SQLHDBC ConnectionHandle,
+		                             SQLWCHAR * ServerName,
+		                             SQLSMALLINT NameLength1,
+		                             SQLWCHAR * UserName,
+		                             SQLSMALLINT NameLength2,
+		                             SQLWCHAR * Authentication,
+		                             SQLSMALLINT NameLength3);
+	void mySQLPrepare(SQLHSTMT StatementHandle, SQLWCHAR * StatementText, SQLINTEGER TextLength);
+	void mySQLExecute(SQLHSTMT StatementHandle);
+	void mySQLEndTran( SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT CompletionType);
+	void DealMainServiceThread::mySQLBindParameter(SQLHSTMT StatementHandle, SQLUSMALLINT ParameterNumber,
+                                                                                    SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
+                                                                                    SQLSMALLINT ParameterType, SQLULEN ColumnSize,
+                                                                                    SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,
+                                                                                    SQLLEN BufferLength, SQLLEN * StrLen_or_IndPtr);
 
 public:
 	bool m_bPause ;  /* 标志位，控制循环是否继续进行 2011/07/19 by zzg */
