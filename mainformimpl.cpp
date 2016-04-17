@@ -61,8 +61,18 @@ mainformImpl::mainformImpl( QWidget* parent)
 	ui->lblFileList->setColumnWidth(2, 150);
 	ui->lblFileList->setColumnWidth(3, 100);
 	CGlobalDataSaver::GetInstance()->m_pTableOut = ui->lblFileList;
-	CGlobalDataSaver::GetInstance()->m_iDataIDStart = CGlobalDataSaver::GetInstance()->m_iMeterIDStart = 100000000000001 ;
-	CGlobalDataSaver::GetInstance()->m_iMeterNumber  = 0 ;
+	CGlobalDataSaver::GetInstance()->m_sDbUserName = ui->txtName->text().simplified();
+	CGlobalDataSaver::GetInstance()->m_sDbUserPass = ui->txtPass->text().simplified();
+	CGlobalDataSaver::GetInstance()->m_sDbService = ui->txtConnName->text().simplified();
+	CGlobalDataSaver::GetInstance()->m_iDCSL = ui->cbDCSL->currentText().toInt();
+	CGlobalDataSaver::GetInstance()->m_retryCount = ui->retryCount->value();
+	CGlobalDataSaver::GetInstance()->m_iDataGM = ui->cbDataGM->currentIndex();
+	CGlobalDataSaver::GetInstance()->m_iDataZQ = ui->cbDataZQ->currentIndex();
+	CGlobalDataSaver::GetInstance()->m_bAllLogOff = ui->allLogOff->isChecked();
+	CGlobalDataSaver::GetInstance()->m_bDetailLogOff = ui->detailLogOff->isChecked();
+	CGlobalDataSaver::GetInstance()->m_bCleanTable = ui->emptyTable->isChecked();
+	ui->pbJD->setMaximum(100);
+	ui->pbJD->setMinimum(0);
 	m_iMax10 = 0;
 	m_iLasteInster = 0;
 	m_iCounter = 0;
@@ -122,6 +132,9 @@ void mainformImpl::OnTimerOut2()
 	LONG64 iCurrSizeSum = 0;
 	LONG64 iSecPass = 0;
 	int iActiveProcess = 0;
+	long runningNum = 0;
+	long exceptionNum = 0;
+	long finishedNum = 0;
 	for (int iT = 0; iT < CGlobalDataSaver::GetInstance()->m_lThreads.count(); iT++)
 	{
 		DealMainServiceThread * pCurrThread = (DealMainServiceThread *)CGlobalDataSaver::GetInstance()->m_lThreads[iT];
@@ -134,17 +147,20 @@ void mainformImpl::OnTimerOut2()
 		{
 			ui->lblFileList->item(iT, 1)->setText(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("进行中"));
 			iActiveProcess++;
+			runningNum++;
 			color = Qt::darkGreen;
 		}
 		else if (pCurrThread->m_iJobflag == RunState::doneInsert)
 		{
 			ui->lblFileList->item(iT, 1)->setText(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("结束"));
+			finishedNum++;
 			color = Qt::black;
 		}
 		else
 		{
 			ui->lblFileList->item(iT, 1)->setText(CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("异常"));
 			color = Qt::red;
+			exceptionNum++;
 			//restart
 			if (pCurrThread->reTryCount < CGlobalDataSaver::GetInstance()->m_retryCount)
 			{
@@ -166,9 +182,13 @@ void mainformImpl::OnTimerOut2()
 		ui->lblFileList->item(iT, 4)->setForeground(color);
 	}//for
 	//update table view
+	ui->runningThreads->setText(QString::number(runningNum));
+	ui->exceptionThreads->setText(QString::number(exceptionNum));
+	ui->finishedThreads->setText(QString::number(finishedNum));
 	ui->lblFileList->viewport()->update();
+	//set progress bar
+	ui->pbJD->setValue(iCurrLineSum*100 /CGlobalDataSaver::GetInstance()->m_iTotalLine);
 
-	ui->pbJD->setValue(iCurrLineSum);
 	ui->txtOUT1->setText(QString::number(iCurrLineSum));
 	ui->txtOUT2->setText(QString::number(iCurrSizeSum));
 
@@ -258,21 +278,98 @@ void mainformImpl::on_cbDays_toggled()
 	}
 }
 
+class StartConnectionThread : public QThread
+{
+public:
+	StartConnectionThread(int thrds, int itvl, int days, QObject * parent = 0)
+		: QThread(parent)
+		, m_thrdsPerItvl(thrds)
+		, m_interval(itvl)
+		, m_totalDays(days)
+	{}
+	virtual void run();
+private:
+	int m_thrdsPerItvl;
+	int m_interval;
+	int m_totalDays;
+};
+
+void StartConnectionThread::run()
+{
+	/* 根据设置的线程数初始化各个线程
+	计算每个线程的MeterID范围 [2016-3-4 by zzg] */
+	LONG64 iMeterNUMPerProcess = 0;  //每个线程中的电表ID数量
+	LONG64 iMeterIDStartCurr = 0;
+	LONG64 iLineTotalUsed = 0;
+	LONG64 iLineCurrProcessUsed = 0;
+	int numOfProcess = CGlobalDataSaver::GetInstance()->m_iProcessNUM;
+	iMeterNUMPerProcess = (LONG64)(CGlobalDataSaver::GetInstance()->m_iMeterNumber / numOfProcess);
+	iMeterIDStartCurr = CGlobalDataSaver::GetInstance()->m_iMeterIDStart;
+	for (int iT = 0; iT < numOfProcess; iT++)
+	{
+		DealMainServiceThread * pCurrThread = NULL;
+		if ("E_MP_VOL_CURVE_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
+		{
+			pCurrThread = (DealMainServiceThread *)new DealVolDataThread();
+		}
+		else if ("E_MP_ENERGY_CURVE_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
+		{
+			pCurrThread = (DealMainServiceThread *)new DealENERGYDataThread();
+		}
+		else if ("E_MP_DAY_ENERGY_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
+		{
+			pCurrThread = (DealMainServiceThread *)new DealDayENERGYDataThread();
+		}
+		else if ("E_MIN_TABLE_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
+		{
+			pCurrThread = (DealMainServiceThread *)new DealMinTableDataThread();
+		}
+		else
+		{
+			return;
+		}
+
+		pCurrThread->m_iProcessID = iT + 1;
+
+		pCurrThread->m_iJobflag = RunState::insert;
+
+		pCurrThread->m_iMeterIDStart = iMeterIDStartCurr;
+
+		if (iT == numOfProcess - 1)
+		{
+			pCurrThread->m_iMeterIDEnd = CGlobalDataSaver::GetInstance()->m_iMeterIDStart + CGlobalDataSaver::GetInstance()->m_iMeterNumber - 1;
+			iMeterNUMPerProcess = pCurrThread->m_iMeterIDEnd - iMeterIDStartCurr + 1;
+		}
+		pCurrThread->m_iMeterIDEnd = iMeterIDStartCurr + iMeterNUMPerProcess - 1;
+		iMeterIDStartCurr += iMeterNUMPerProcess;
+		iLineCurrProcessUsed = iMeterNUMPerProcess * m_totalDays;  //每个线程中的总记录数
+
+		pCurrThread->m_iTotalLine = iLineCurrProcessUsed;
+		pCurrThread->m_iIDStart = CGlobalDataSaver::GetInstance()->m_iDataIDStart + iLineTotalUsed;
+		pCurrThread->m_iIDEnd = pCurrThread->m_iIDStart + iLineCurrProcessUsed - 1;
+		iLineTotalUsed += iLineCurrProcessUsed;
+		//initialize insert worker thread array
+		CGlobalDataSaver::GetInstance()->m_lThreads[iT] = pCurrThread;
+		/* 写到table 里 [2016-3-4 by zzg] */
+		CGlobalDataSaver::GetInstance()->m_pTableOut->setItem(iT, 0, new QTableWidgetItem(QString::number(pCurrThread->m_iIDStart)));
+		CGlobalDataSaver::GetInstance()->m_pTableOut->setItem(iT, 1, new QTableWidgetItem(""));
+		CGlobalDataSaver::GetInstance()->m_pTableOut->setItem(iT, 2, new QTableWidgetItem(""));
+		CGlobalDataSaver::GetInstance()->m_pTableOut->setItem(iT, 3, new QTableWidgetItem(""));
+		CGlobalDataSaver::GetInstance()->m_pTableOut->setItem(iT, 4, new QTableWidgetItem(""));
+		pCurrThread->start();
+		//sleep(1);
+		//if (!(iT%m_thrdsPerItvl))
+		//    sleep(m_interval);
+	}//for
+}
+
 void mainformImpl::OnBtnStartClicked()
 {
 	ui->btnStart->setEnabled(false);
-	int iProcessNum ;
-	CGlobalDataSaver::GetInstance()->m_sDbUserName = ui->txtName->text().simplified();
-	CGlobalDataSaver::GetInstance()->m_sDbUserPass = ui->txtPass->text().simplified();
-	CGlobalDataSaver::GetInstance()->m_sDbService = ui->txtConnName->text().simplified();
-	CGlobalDataSaver::GetInstance()->m_iProcessNUM = iProcessNum = ui->sbConnNum->value();
-	CGlobalDataSaver::GetInstance()->m_iDCSL = ui->cbDCSL->currentText().toInt();
-	CGlobalDataSaver::GetInstance()->m_retryCount = ui->retryCount->value();
-	CGlobalDataSaver::GetInstance()->m_iDataGM = ui->cbDataGM->currentIndex();
-	CGlobalDataSaver::GetInstance()->m_iDataZQ = ui->cbDataZQ->currentIndex();
-	CGlobalDataSaver::GetInstance()->m_bAllLogOff = ui->allLogOff->isChecked();
-	CGlobalDataSaver::GetInstance()->m_bDetailLogOff = ui->detailLogOff->isChecked();
-	CGlobalDataSaver::GetInstance()->m_bCleanTable = ui->emptyTable->isChecked();
+
+	CGlobalDataSaver::GetInstance()->m_connTimeOut = ui->connTimeOut->value();
+	CGlobalDataSaver::GetInstance()->m_iProcessNUM = ui->sbConnNum->value();
+	ui->lblFileList->setRowCount(ui->sbConnNum->value());
 
 	if (ui->rbInsert->isChecked())
 		CGlobalDataSaver::GetInstance()->m_InsertType = InsertType::INSERT_INTO;
@@ -285,6 +382,7 @@ void mainformImpl::OnBtnStartClicked()
 	QString msgPositive = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("请输入大于1的值");
 	QString msgConv = CGlobalDataSaver::GetInstance()->m_pTextCode->toUnicode("无法转换为整数");
 
+	CGlobalDataSaver::GetInstance()->m_iMeterNumber = 0;
 	QString sDBS ;
 	if (ui->cbDataGM->isEnabled())
 	{
@@ -407,78 +505,14 @@ void mainformImpl::OnBtnStartClicked()
 	ui->txtOUT1->setText("0");
 	ui->txtOUT2->setText("0");
 	ui->txtOUTt->setText(QString::number(CGlobalDataSaver::GetInstance()->m_iTotalLine));
-	/* 根据设置的线程数初始化各个线程
-	计算每个线程的MeterID范围 [2016-3-4 by zzg] */
-
-	LONG64 iMeterNUMPerProcess = 0 ;  //每个线程中的电表ID数量
-	LONG64 iMeterIDStartCurr = 0 ; 
-	LONG64 iLineTotalUsed = 0 ;
-	LONG64 iLineCurrProcessUsed = 0 ;
-	iMeterNUMPerProcess = (LONG64)(CGlobalDataSaver::GetInstance()->m_iMeterNumber / iProcessNum);
-
-	ui->lblFileList->setRowCount(iProcessNum);
 
 	CGlobalDataSaver::GetInstance()->m_lThreads.clear();
-
-	ui->pbJD->setMaximum(CGlobalDataSaver::GetInstance()->m_iTotalLine);
-	iMeterIDStartCurr = CGlobalDataSaver::GetInstance()->m_iMeterIDStart;
-
 	CGlobalDataSaver::GetInstance()->m_dtProcessStart = QDateTime::currentDateTime();
-	m_dtLasteTime = CGlobalDataSaver::GetInstance()->m_dtProcessStart; 
-	m_iLasteInster = 0 ;
-	for (int iT = 0 ; iT < iProcessNum ; iT++)
-	{
-		DealMainServiceThread * pCurrThread = NULL ;
-		if ("E_MP_VOL_CURVE_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
-		{
-			pCurrThread = (DealMainServiceThread * )new DealVolDataThread();
-		}
-		else if ("E_MP_ENERGY_CURVE_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
-		{
-			pCurrThread = (DealMainServiceThread * )new DealENERGYDataThread();
-		}
-		else if ("E_MP_DAY_ENERGY_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
-		{
-			pCurrThread = (DealMainServiceThread * )new DealDayENERGYDataThread();
-		}
-		else if ("E_MIN_TABLE_P" == CGlobalDataSaver::GetInstance()->m_sDataTable)
-		{
-			pCurrThread = (DealMainServiceThread * )new DealMinTableDataThread();
-		}
-		else
-		{
-			return;
-		}
+	m_dtLasteTime = CGlobalDataSaver::GetInstance()->m_dtProcessStart;
+	m_iLasteInster = 0;
+    
+	StartConnectionThread *worker = new StartConnectionThread(ui->connInterval->value(), ui->connInterval->value(), iDaySum, this);
+	connect(worker, &StartConnectionThread::finished, worker, &QObject::deleteLater);
+	worker ->start();
 
-		pCurrThread->m_iProcessID = iT + 1;
-
- 	    pCurrThread->m_iJobflag = RunState::insert;
-
-		pCurrThread->m_iMeterIDStart = iMeterIDStartCurr;
-	
-		if (iT == iProcessNum - 1)
-		{
-			pCurrThread->m_iMeterIDEnd = CGlobalDataSaver::GetInstance()->m_iMeterIDStart + CGlobalDataSaver::GetInstance()->m_iMeterNumber -1;
-			iMeterNUMPerProcess = pCurrThread->m_iMeterIDEnd - iMeterIDStartCurr + 1  ;
-		}	
-		pCurrThread->m_iMeterIDEnd = iMeterIDStartCurr + iMeterNUMPerProcess - 1;
-		iMeterIDStartCurr += iMeterNUMPerProcess ;
-		iLineCurrProcessUsed = iMeterNUMPerProcess * iDaySum ;  //每个线程中的总记录数
-		
-		pCurrThread->m_iTotalLine = iLineCurrProcessUsed ;
-		pCurrThread->m_iIDStart = CGlobalDataSaver::GetInstance()->m_iDataIDStart + iLineTotalUsed ;
-		pCurrThread->m_iIDEnd = pCurrThread->m_iIDStart + iLineCurrProcessUsed -1 ;
-		iLineTotalUsed += iLineCurrProcessUsed ;
-	
-		CGlobalDataSaver::GetInstance()->m_lThreads[iT] = pCurrThread;
-
-		/* 写到table 里 [2016-3-4 by zzg] */
-		ui->lblFileList->setItem(iT, 0, new QTableWidgetItem(QString::number(pCurrThread->m_iIDStart)));
-		ui->lblFileList->setItem(iT, 1, new QTableWidgetItem(""));
-		ui->lblFileList->setItem(iT, 2, new QTableWidgetItem(""));
-		ui->lblFileList->setItem(iT, 3, new QTableWidgetItem(""));
-		ui->lblFileList->setItem(iT, 4, new QTableWidgetItem(""));
-		pCurrThread->start();
-
-	}//for
 }

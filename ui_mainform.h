@@ -51,6 +51,15 @@ public:
     QLineEdit *txtPass;
     QLabel *textLabel1_2_3;
     QLineEdit *txtConnName;
+    QHBoxLayout *horizontalLayout_3;
+    QLabel *label_6;
+    QSpinBox *connTimeOut;
+    QLabel *label_7;
+    QSpinBox *connInterval;
+    QLabel *label_10;
+    QSpinBox *connThreads;
+    QLabel *label_11;
+    QSpacerItem *horizontalSpacer_12;
     QHBoxLayout *hboxLayout3;
     QLabel *textLabel1_2_4_2;
     QVBoxLayout *vboxLayout2;
@@ -123,6 +132,14 @@ public:
     QLabel *txtOUT7;
     QLabel *textLabel1_2_4_2_2_2_3_3_2;
     QSpacerItem *horizontalSpacer_11;
+    QHBoxLayout *horizontalLayout_4;
+    QLabel *label_8;
+    QLabel *runningThreads;
+    QLabel *label_12;
+    QLabel *exceptionThreads;
+    QLabel *label_14;
+    QLabel *finishedThreads;
+    QSpacerItem *horizontalSpacer_13;
     QProgressBar *pbJD;
     QHBoxLayout *horizontalLayout;
     QTableWidget *lblFileList;
@@ -131,7 +148,7 @@ public:
     {
         if (mainform->objectName().isEmpty())
             mainform->setObjectName(QStringLiteral("mainform"));
-        mainform->resize(835, 490);
+        mainform->resize(845, 490);
         vboxLayout = new QVBoxLayout(mainform);
         vboxLayout->setSpacing(6);
         vboxLayout->setContentsMargins(11, 11, 11, 11);
@@ -252,6 +269,55 @@ public:
 
 
         vboxLayout1->addLayout(hboxLayout2);
+
+        horizontalLayout_3 = new QHBoxLayout();
+        horizontalLayout_3->setSpacing(6);
+        horizontalLayout_3->setObjectName(QStringLiteral("horizontalLayout_3"));
+        horizontalLayout_3->setContentsMargins(-1, 0, -1, 0);
+        label_6 = new QLabel(mainform);
+        label_6->setObjectName(QStringLiteral("label_6"));
+
+        horizontalLayout_3->addWidget(label_6);
+
+        connTimeOut = new QSpinBox(mainform);
+        connTimeOut->setObjectName(QStringLiteral("connTimeOut"));
+        connTimeOut->setValue(5);
+
+        horizontalLayout_3->addWidget(connTimeOut);
+
+        label_7 = new QLabel(mainform);
+        label_7->setObjectName(QStringLiteral("label_7"));
+
+        horizontalLayout_3->addWidget(label_7);
+
+        connInterval = new QSpinBox(mainform);
+        connInterval->setObjectName(QStringLiteral("connInterval"));
+        connInterval->setValue(2);
+
+        horizontalLayout_3->addWidget(connInterval);
+
+        label_10 = new QLabel(mainform);
+        label_10->setObjectName(QStringLiteral("label_10"));
+
+        horizontalLayout_3->addWidget(label_10);
+
+        connThreads = new QSpinBox(mainform);
+        connThreads->setObjectName(QStringLiteral("connThreads"));
+        connThreads->setValue(10);
+
+        horizontalLayout_3->addWidget(connThreads);
+
+        label_11 = new QLabel(mainform);
+        label_11->setObjectName(QStringLiteral("label_11"));
+
+        horizontalLayout_3->addWidget(label_11);
+
+        horizontalSpacer_12 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout_3->addItem(horizontalSpacer_12);
+
+
+        vboxLayout1->addLayout(horizontalLayout_3);
 
         hboxLayout3 = new QHBoxLayout();
         hboxLayout3->setSpacing(6);
@@ -727,6 +793,50 @@ public:
 
         vboxLayout->addLayout(hboxLayout10);
 
+        horizontalLayout_4 = new QHBoxLayout();
+        horizontalLayout_4->setSpacing(6);
+        horizontalLayout_4->setObjectName(QStringLiteral("horizontalLayout_4"));
+        horizontalLayout_4->setContentsMargins(0, 5, -1, 5);
+        label_8 = new QLabel(mainform);
+        label_8->setObjectName(QStringLiteral("label_8"));
+
+        horizontalLayout_4->addWidget(label_8);
+
+        runningThreads = new QLabel(mainform);
+        runningThreads->setObjectName(QStringLiteral("runningThreads"));
+        runningThreads->setMargin(2);
+
+        horizontalLayout_4->addWidget(runningThreads);
+
+        label_12 = new QLabel(mainform);
+        label_12->setObjectName(QStringLiteral("label_12"));
+
+        horizontalLayout_4->addWidget(label_12);
+
+        exceptionThreads = new QLabel(mainform);
+        exceptionThreads->setObjectName(QStringLiteral("exceptionThreads"));
+        exceptionThreads->setMargin(2);
+
+        horizontalLayout_4->addWidget(exceptionThreads);
+
+        label_14 = new QLabel(mainform);
+        label_14->setObjectName(QStringLiteral("label_14"));
+
+        horizontalLayout_4->addWidget(label_14);
+
+        finishedThreads = new QLabel(mainform);
+        finishedThreads->setObjectName(QStringLiteral("finishedThreads"));
+        finishedThreads->setMargin(2);
+
+        horizontalLayout_4->addWidget(finishedThreads);
+
+        horizontalSpacer_13 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout_4->addItem(horizontalSpacer_13);
+
+
+        vboxLayout->addLayout(horizontalLayout_4);
+
         pbJD = new QProgressBar(mainform);
         pbJD->setObjectName(QStringLiteral("pbJD"));
         pbJD->setValue(0);
@@ -807,6 +917,10 @@ public:
         txtPass->setText(QString());
         textLabel1_2_3->setText(QApplication::translate("mainform", "\350\277\236\346\216\245\345\220\215", 0));
         txtConnName->setText(QString());
+        label_6->setText(QApplication::translate("mainform", "\350\277\236\346\216\245\345\217\202\346\225\260\357\274\232   \350\277\236\346\216\245\350\266\205\346\227\266", 0));
+        label_7->setText(QApplication::translate("mainform", "\347\247\222 \346\257\217\351\232\224", 0));
+        label_10->setText(QApplication::translate("mainform", "\347\247\222 \345\210\233\345\273\272", 0));
+        label_11->setText(QApplication::translate("mainform", "\344\270\252\347\272\277\347\250\213", 0));
         textLabel1_2_4_2->setText(QApplication::translate("mainform", "\346\265\213\350\257\225\350\256\276\347\275\256    ", 0));
         textLabel1_2_5->setText(QApplication::translate("mainform", "\345\271\266\345\217\221\350\277\236\346\216\245\346\225\260\357\274\232", 0));
         textLabel1_2_5_2_2->setText(QApplication::translate("mainform", "\345\215\225\346\254\241\346\217\220\344\272\244\346\225\260\351\207\217\357\274\232", 0));
@@ -863,7 +977,7 @@ public:
         btnStart->setText(QApplication::translate("mainform", "\346\211\247\350\241\214", 0));
         btnPause->setText(QApplication::translate("mainform", "\346\232\202\345\201\234", 0));
         btnStop->setText(QApplication::translate("mainform", "\345\201\234\346\255\242", 0));
-        textLabel1_2_4_2_2->setText(QApplication::translate("mainform", "\345\220\210\350\256\241\344\272\247\347\224\237\357\274\232", 0));
+        textLabel1_2_4_2_2->setText(QApplication::translate("mainform", "\345\220\210\350\256\241\345\267\262\344\272\247\347\224\237\357\274\232", 0));
         txtOUT1->setText(QApplication::translate("mainform", "0", 0));
         label->setText(QApplication::translate("mainform", "\346\235\241", 0));
         textLabel1_2_4_2_2_2->setText(QApplication::translate("mainform", "\345\215\240\347\224\250\347\251\272\351\227\264", 0));
@@ -885,6 +999,12 @@ public:
         textLabel1_2_4_2_2_2_3_3->setText(QApplication::translate("mainform", "10 \345\210\206\351\222\237\346\234\200\345\244\247\345\200\274", 0));
         txtOUT7->setText(QApplication::translate("mainform", "0", 0));
         textLabel1_2_4_2_2_2_3_3_2->setText(QApplication::translate("mainform", "\346\235\241/s", 0));
+        label_8->setText(QApplication::translate("mainform", "\350\277\220\350\241\214\344\270\255\357\274\232", 0));
+        runningThreads->setText(QApplication::translate("mainform", "0", 0));
+        label_12->setText(QApplication::translate("mainform", "  \345\274\202\345\270\270\357\274\232", 0));
+        exceptionThreads->setText(QApplication::translate("mainform", "0", 0));
+        label_14->setText(QApplication::translate("mainform", "  \347\273\223\346\235\237\357\274\232", 0));
+        finishedThreads->setText(QApplication::translate("mainform", "0", 0));
         QTableWidgetItem *___qtablewidgetitem = lblFileList->horizontalHeaderItem(0);
         ___qtablewidgetitem->setText(QApplication::translate("mainform", "ID\350\265\267\345\247\213\345\200\274", 0));
         QTableWidgetItem *___qtablewidgetitem1 = lblFileList->horizontalHeaderItem(1);

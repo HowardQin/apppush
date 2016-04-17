@@ -89,7 +89,7 @@ public:
 	QLabel * m_pLblAlarmStatus   ;		/* 告警状态提示，位于主界面 2011/07/19 by zzg */
 
 	int     m_iTimeTurnBaseStep ;       /*  时间循环基本步长，单位为秒，计算方法为 程序设置步长 * 基础步长 [2012-10-24 by zzg] */
-
+	int m_connTimeOut;
 	static QStringList m_lMsgs ;
 
 	bool  m_bCloseMainWindow ;
