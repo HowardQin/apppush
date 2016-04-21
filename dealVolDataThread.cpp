@@ -44,7 +44,7 @@ void DealVolDataThread::run()
 		mySQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc_dre);
 
 		//5ÃëÁ¬½Ó³¬Ê±
-		mySQLSetConnectAttr(hdbc_dre, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
+		mySQLSetConnectAttr(hdbc_dre, SQL_LOGIN_TIMEOUT, (SQLPOINTER)CGlobalDataSaver::GetInstance()->m_connTimeOut, 0);
 
 		mySQLConnect(hdbc_dre, (SQLWCHAR*)CGlobalDataSaver::GetInstance()->m_sDbService.unicode(), SQL_NTS,
 			                                      (SQLWCHAR*)CGlobalDataSaver::GetInstance()->m_sDbUserName.unicode(), SQL_NTS, 

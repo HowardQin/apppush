@@ -60,17 +60,7 @@ mainformImpl::mainformImpl( QWidget* parent)
 	ui->lblFileList->setColumnWidth(1, 100);
 	ui->lblFileList->setColumnWidth(2, 150);
 	ui->lblFileList->setColumnWidth(3, 100);
-	CGlobalDataSaver::GetInstance()->m_pTableOut = ui->lblFileList;
-	CGlobalDataSaver::GetInstance()->m_sDbUserName = ui->txtName->text().simplified();
-	CGlobalDataSaver::GetInstance()->m_sDbUserPass = ui->txtPass->text().simplified();
-	CGlobalDataSaver::GetInstance()->m_sDbService = ui->txtConnName->text().simplified();
-	CGlobalDataSaver::GetInstance()->m_iDCSL = ui->cbDCSL->currentText().toInt();
-	CGlobalDataSaver::GetInstance()->m_retryCount = ui->retryCount->value();
-	CGlobalDataSaver::GetInstance()->m_iDataGM = ui->cbDataGM->currentIndex();
-	CGlobalDataSaver::GetInstance()->m_iDataZQ = ui->cbDataZQ->currentIndex();
-	CGlobalDataSaver::GetInstance()->m_bAllLogOff = ui->allLogOff->isChecked();
-	CGlobalDataSaver::GetInstance()->m_bDetailLogOff = ui->detailLogOff->isChecked();
-	CGlobalDataSaver::GetInstance()->m_bCleanTable = ui->emptyTable->isChecked();
+
 	ui->pbJD->setMaximum(100);
 	ui->pbJD->setMinimum(0);
 	m_iMax10 = 0;
@@ -357,9 +347,8 @@ void StartConnectionThread::run()
 		CGlobalDataSaver::GetInstance()->m_pTableOut->setItem(iT, 3, new QTableWidgetItem(""));
 		CGlobalDataSaver::GetInstance()->m_pTableOut->setItem(iT, 4, new QTableWidgetItem(""));
 		pCurrThread->start();
-		//sleep(1);
-		//if (!(iT%m_thrdsPerItvl))
-		//    sleep(m_interval);
+		if (!(iT%m_thrdsPerItvl))
+			sleep(m_interval);
 	}//for
 }
 
@@ -367,6 +356,17 @@ void mainformImpl::OnBtnStartClicked()
 {
 	ui->btnStart->setEnabled(false);
 
+	CGlobalDataSaver::GetInstance()->m_pTableOut = ui->lblFileList;
+	CGlobalDataSaver::GetInstance()->m_sDbUserName = ui->txtName->text().simplified();
+	CGlobalDataSaver::GetInstance()->m_sDbUserPass = ui->txtPass->text().simplified();
+	CGlobalDataSaver::GetInstance()->m_sDbService = ui->txtConnName->text().simplified();
+	CGlobalDataSaver::GetInstance()->m_iDCSL = ui->cbDCSL->currentText().toInt();
+	CGlobalDataSaver::GetInstance()->m_retryCount = ui->retryCount->value();
+	CGlobalDataSaver::GetInstance()->m_iDataGM = ui->cbDataGM->currentIndex();
+	CGlobalDataSaver::GetInstance()->m_iDataZQ = ui->cbDataZQ->currentIndex();
+	CGlobalDataSaver::GetInstance()->m_bAllLogOff = ui->allLogOff->isChecked();
+	CGlobalDataSaver::GetInstance()->m_bDetailLogOff = ui->detailLogOff->isChecked();
+	CGlobalDataSaver::GetInstance()->m_bCleanTable = ui->emptyTable->isChecked();
 	CGlobalDataSaver::GetInstance()->m_connTimeOut = ui->connTimeOut->value();
 	CGlobalDataSaver::GetInstance()->m_iProcessNUM = ui->sbConnNum->value();
 	ui->lblFileList->setRowCount(ui->sbConnNum->value());
@@ -511,7 +511,7 @@ void mainformImpl::OnBtnStartClicked()
 	m_dtLasteTime = CGlobalDataSaver::GetInstance()->m_dtProcessStart;
 	m_iLasteInster = 0;
     
-	StartConnectionThread *worker = new StartConnectionThread(ui->connInterval->value(), ui->connInterval->value(), iDaySum, this);
+	StartConnectionThread *worker = new StartConnectionThread(ui->connThreads->value(), ui->connInterval->value(), iDaySum, this);
 	connect(worker, &StartConnectionThread::finished, worker, &QObject::deleteLater);
 	worker ->start();
 
